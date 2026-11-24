@@ -1,0 +1,1115 @@
+<title>Triatlon Kokpit</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: cockpit — sticky header, left column = dashboard modules in a 12-col grid, right column = AI coach rail (stacks under on narrow screens) */
+:root{
+  --bg:#EEF2F5; --surface:#FFFFFF; --surface-2:#F5F8FA; --ink:#0F1C26; --muted:#5B6D7A; --line:#D9E1E7;
+  --accent:#0A6C93; --accent-soft:#D6EAF3;
+  --swim:#1683C4; --bike:#C98A00; --run:#D9482F; --strength:#6E4FD8; --other:#7D8B96;
+  --ctl:#0A6C93; --atl:#D9482F; --tsb:#2E8F62;
+  --good:#22895A; --warn:#C27C00; --bad:#C93838; --info:#0A6C93;
+  --z1:#9FC6DA; --z2:#3F9BC4; --z3:#E2B23C; --z4:#E07A3A; --z5:#C93838;
+  --font-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --font-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0B1218; --surface:#121C24; --surface-2:#17232D; --ink:#E4ECF1; --muted:#8FA1AE; --line:#24343F;
+  --accent:#4DB3DE; --accent-soft:#12303F;
+  --swim:#46A9E6; --bike:#E9AE2A; --run:#F06B52; --strength:#9A80F0; --other:#8C99A3;
+  --ctl:#4DB3DE; --atl:#F06B52; --tsb:#4CC38A;
+  --good:#4CC38A; --warn:#E9AE2A; --bad:#F06464; --info:#4DB3DE;
+  --z1:#2F5566; --z2:#2C83AB; --z3:#C99A2C; --z4:#D46A2E; --z5:#D94848;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0B1218; --surface:#121C24; --surface-2:#17232D; --ink:#E4ECF1; --muted:#8FA1AE; --line:#24343F;
+  --accent:#4DB3DE; --accent-soft:#12303F;
+  --swim:#46A9E6; --bike:#E9AE2A; --run:#F06B52; --strength:#9A80F0; --other:#8C99A3;
+  --ctl:#4DB3DE; --atl:#F06B52; --tsb:#4CC38A;
+  --good:#4CC38A; --warn:#E9AE2A; --bad:#F06464; --info:#4DB3DE;
+  --z1:#2F5566; --z2:#2C83AB; --z3:#C99A2C; --z4:#D46A2E; --z5:#D94848;
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--font-body);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+h1,h2,h3{font-family:var(--font-display);font-weight:600;letter-spacing:.01em;margin:0;text-wrap:balance}
+.num,.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* Header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-block:10px;max-width:1560px;margin:0 auto}
+.brand{display:flex;align-items:baseline;gap:10px;min-width:0}
+.brand h1{font-size:26px;line-height:1;text-transform:uppercase;letter-spacing:.04em}
+.brand .stripes{display:inline-flex;gap:3px;align-self:center}
+.brand .stripes i{width:6px;height:18px;border-radius:2px;display:block;transform:skewX(-18deg)}
+.who{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nav{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+.nav a{padding:6px 10px;border-radius:7px;color:var(--muted);text-decoration:none;font-weight:500;font-size:13px}
+.nav a:hover{background:var(--surface-2);color:var(--ink)}
+.nav a.on{background:var(--accent-soft);color:var(--accent)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:99px;font-size:12px;font-weight:500;border:1px solid var(--line);background:var(--surface-2);white-space:nowrap}
+.chip .dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+.chip.demo{color:var(--warn)} .chip.live{color:var(--good)}
+
+/* Layout */
+.shell{max-width:1560px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:18px;padding-block:18px 40px}
+@media (max-width:1180px){.shell{grid-template-columns:minmax(0,1fr)}}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px;align-content:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.card h2{font-size:19px;text-transform:uppercase;letter-spacing:.05em}
+.card .sub{color:var(--muted);font-size:12.5px;margin-top:2px}
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.c12{grid-column:span 12}.c8{grid-column:span 8}.c7{grid-column:span 7}.c6{grid-column:span 6}.c5{grid-column:span 5}.c4{grid-column:span 4}
+@media (max-width:980px){.c8,.c7,.c6,.c5,.c4{grid-column:span 12}}
+.section-title{grid-column:span 12;display:flex;align-items:baseline;gap:10px;margin-top:8px;scroll-margin-top:80px}
+.section-title h2{font-size:15px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.section-title::after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* Demo banner */
+.banner{grid-column:span 12;display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px 14px;border-radius:var(--r);border:1px dashed var(--warn);color:var(--ink);background:var(--surface)}
+.banner b{color:var(--warn)}
+.btn{border:1px solid var(--line);background:var(--surface-2);padding:7px 12px;border-radius:8px;font-weight:500;font-size:13px}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.btn.primary:hover{filter:brightness(1.08);color:var(--surface)}
+.btn.danger{color:var(--bad)}
+.btn:disabled{opacity:.5;cursor:default}
+
+/* Today */
+.today{display:grid;grid-template-columns:200px minmax(0,1fr);gap:18px;align-items:center}
+@media (max-width:560px){.today{grid-template-columns:minmax(0,1fr)}}
+.gauge{position:relative;width:200px;max-width:100%;margin:0 auto}
+.gauge .val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding-top:14px}
+.gauge .val b{font-family:var(--font-display);font-size:54px;line-height:1;font-weight:700}
+.gauge .val span{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.verdict{font-family:var(--font-display);font-size:24px;font-weight:600;line-height:1.15}
+.reco{margin:8px 0 12px;max-width:62ch}
+.factors{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:560px){.factors{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.factor{background:var(--surface-2);border-radius:8px;padding:8px 10px}
+.factor small{display:block;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+.factor b{font-family:var(--font-mono);font-size:15px;font-weight:500}
+.bar{height:4px;border-radius:2px;background:var(--line);margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:2px}
+
+/* Race */
+.race-top{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.tminus{font-family:var(--font-display);font-size:48px;font-weight:700;line-height:.9}
+.tminus small{font-size:16px;color:var(--muted);font-weight:500;letter-spacing:.06em;margin-left:4px}
+.phases{display:flex;height:30px;border-radius:6px;overflow:hidden;margin:14px 0 4px;position:relative}
+.phases div{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);min-width:0;overflow:hidden;white-space:nowrap}
+.phases .p-base{background:color-mix(in srgb,var(--swim) 22%,var(--surface))}
+.phases .p-build{background:color-mix(in srgb,var(--bike) 26%,var(--surface))}
+.phases .p-peak{background:color-mix(in srgb,var(--run) 26%,var(--surface))}
+.phases .p-taper{background:color-mix(in srgb,var(--tsb) 26%,var(--surface))}
+.phases .now{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink)}
+.phase-dates{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.legs{display:flex;gap:4px;margin-top:14px}
+.legs div{flex:1;padding:6px 8px;border-radius:6px;background:var(--surface-2);min-width:0}
+.legs small{display:block;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.legs b{font-family:var(--font-mono);font-weight:500;font-size:13px}
+.legs .swim{border-top:3px solid var(--swim)}.legs .bike{border-top:3px solid var(--bike)}.legs .run{border-top:3px solid var(--run)}
+.proj{margin-top:12px;font-size:13px}
+.meter{position:relative;height:10px;border-radius:5px;background:var(--surface-2);border:1px solid var(--line);margin:6px 0 2px}
+.meter i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:var(--ctl);opacity:.85}
+.meter u{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink)}
+
+/* KPIs */
+.kpis{grid-column:span 12;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+@media (max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;min-width:0;display:flex;flex-direction:column;gap:2px}
+.kpi .lab{font-size:11.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);display:flex;justify-content:space-between;gap:6px}
+.kpi .v{font-family:var(--font-display);font-size:34px;font-weight:600;line-height:1.05}
+.kpi .v small{font-size:15px;color:var(--muted);font-weight:500;margin-left:3px}
+.kpi .d{font-size:12px;color:var(--muted)}
+.kpi svg{display:block;margin-top:4px;width:100%;height:30px}
+.up{color:var(--good)}.down{color:var(--bad)}.flat{color:var(--muted)}
+.pill{display:inline-block;padding:1px 7px;border-radius:99px;font-size:10.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.pill.good{background:color-mix(in srgb,var(--good) 16%,transparent);color:var(--good)}
+.pill.warn{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.pill.bad{background:color-mix(in srgb,var(--bad) 16%,transparent);color:var(--bad)}
+.pill.info{background:color-mix(in srgb,var(--info) 16%,transparent);color:var(--info)}
+
+/* Charts */
+.chart{position:relative;width:100%;min-width:0}
+.chart svg{display:block;overflow:visible}
+.ax{font-family:var(--font-mono);font-size:10.5px;fill:var(--muted)}
+.gridl{stroke:var(--line);stroke-width:1}
+.zero{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3}
+.l-ctl{fill:none;stroke:var(--ctl);stroke-width:2.4}
+.l-atl{fill:none;stroke:var(--atl);stroke-width:1.6}
+.l-tsb{fill:none;stroke:var(--tsb);stroke-width:1.6}
+.a-tsb{fill:var(--tsb);opacity:.12}
+.tssbar{fill:var(--muted);opacity:.22}
+.hoverline{stroke:var(--ink);stroke-width:1;opacity:.35}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;box-shadow:0 6px 18px rgb(0 0 0 / .14);min-width:140px;z-index:5}
+.tip b{display:block;font-weight:600;margin-bottom:2px}
+.tip div{display:flex;justify-content:space-between;gap:12px;font-family:var(--font-mono)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:12px;height:3px;border-radius:2px;display:inline-block}
+.legend i.sq{height:10px;width:10px;border-radius:2px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:5px 10px;font-size:12px;color:var(--muted)}
+.seg button.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.f-swim{fill:var(--swim)}.f-bike{fill:var(--bike)}.f-run{fill:var(--run)}.f-strength{fill:var(--strength)}.f-other{fill:var(--other)}
+.b-swim{background:var(--swim)}.b-bike{background:var(--bike)}.b-run{background:var(--run)}.b-strength{background:var(--strength)}.b-other{background:var(--other)}
+.goal{stroke:var(--ink);stroke-dasharray:4 4;opacity:.55}
+
+/* Radar */
+.radar-wrap{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:12px;align-items:center}
+@media (max-width:620px){.radar-wrap{grid-template-columns:minmax(0,1fr)}}
+.r-ring{fill:none;stroke:var(--line)}
+.r-axis{stroke:var(--line)}
+.r-now{fill:var(--accent);fill-opacity:.2;stroke:var(--accent);stroke-width:2}
+.r-prev{fill:none;stroke:var(--muted);stroke-width:1.4;stroke-dasharray:4 3}
+.r-dot{fill:var(--accent)}
+.r-lab{font-size:11.5px;fill:var(--ink);font-weight:500}
+.r-val{font-family:var(--font-mono);font-size:10.5px;fill:var(--muted)}
+.rlist{display:grid;gap:6px;font-size:12.5px}
+.rlist div{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center}
+.rlist b{font-family:var(--font-mono);font-weight:500}
+.rlist em{font-style:normal;font-family:var(--font-mono);font-size:11.5px}
+
+/* Zones */
+.zbar{display:flex;height:26px;border-radius:6px;overflow:hidden}
+.zbar div{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--ink);min-width:0;overflow:hidden}
+.zrow{display:grid;grid-template-columns:76px minmax(0,1fr) 48px;gap:10px;align-items:center;margin-top:8px;font-size:12.5px}
+.zrow .zbar{height:14px}
+.z1{background:var(--z1)}.z2{background:var(--z2)}.z3{background:var(--z3)}.z4{background:var(--z4)}.z5{background:var(--z5)}
+.polar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px}
+.polar div{background:var(--surface-2);border-radius:8px;padding:8px 10px}
+.polar small{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.polar b{font-family:var(--font-display);font-size:24px;font-weight:600}
+.polar span{font-size:11.5px;color:var(--muted)}
+
+/* Heatmap */
+.heat-scroll{overflow-x:auto}
+.heat{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,13px);gap:3px;width:max-content}
+.heat i{width:13px;height:13px;border-radius:3px;background:var(--surface-2);border:1px solid var(--line)}
+.heat i.h1{background:color-mix(in srgb,var(--accent) 25%,var(--surface));border-color:transparent}
+.heat i.h2{background:color-mix(in srgb,var(--accent) 48%,var(--surface));border-color:transparent}
+.heat i.h3{background:color-mix(in srgb,var(--accent) 72%,var(--surface));border-color:transparent}
+.heat i.h4{background:var(--accent);border-color:transparent}
+.heat i.rest{opacity:.5}
+.heat-legend{display:flex;gap:3px;align-items:center;font-size:11px;color:var(--muted);margin-top:8px}
+.heat-legend i{width:11px;height:11px;border-radius:2px;display:inline-block}
+
+/* Insights */
+.insights{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media (max-width:760px){.insights{grid-template-columns:minmax(0,1fr)}}
+.ins{display:grid;grid-template-columns:4px minmax(0,1fr);gap:12px;background:var(--surface-2);border-radius:8px;padding:10px 12px 10px 0;overflow:hidden}
+.ins::before{content:"";border-radius:0 3px 3px 0}
+.ins.good::before{background:var(--good)}.ins.warn::before{background:var(--warn)}.ins.bad::before{background:var(--bad)}.ins.info::before{background:var(--info)}
+.ins h3{font-family:var(--font-body);font-size:13.5px;font-weight:600;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ins p{margin:3px 0 0;font-size:12.5px;color:var(--muted)}
+.ins .ask{margin-top:6px;border:0;background:none;padding:0;color:var(--accent);font-size:12px;font-weight:500}
+
+/* Table */
+.tbl-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-weight:500;color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:7px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td.n,th.n{text-align:right;font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+td.name{white-space:normal;min-width:160px}
+.sport{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500}
+.sport i{width:9px;height:9px;border-radius:2px;display:inline-block}
+
+/* Coach */
+.coach{position:sticky;top:calc(env(safe-area-inset-top,0px) + 70px);align-self:start;height:calc(100vh - 92px);display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;scroll-margin-top:80px}
+@media (max-width:1180px){.coach{position:relative;top:0;height:640px}}
+.coach-head{padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+.coach-head h2{font-size:20px;text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:8px}
+.coach-head p{margin:2px 0 0;color:var(--muted);font-size:12.5px}
+.avatar{width:26px;height:26px;border-radius:7px;background:var(--accent);color:var(--surface);display:inline-flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;font-family:var(--font-display)}
+.msgs{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:12px}
+.msg{max-width:100%;min-width:0;font-size:13.5px;line-height:1.55}
+.msg.me{align-self:flex-end;background:var(--accent-soft);padding:8px 12px;border-radius:12px 12px 2px 12px;max-width:88%;white-space:pre-wrap}
+.msg.ai{align-self:stretch}
+.msg.ai p{margin:0 0 8px}
+.msg.ai h3,.msg.ai h4{font-family:var(--font-display);font-size:17px;margin:10px 0 4px;text-transform:none}
+.msg.ai ul,.msg.ai ol{margin:0 0 8px;padding-left:20px}
+.msg.ai li{margin:2px 0}
+.msg.ai table{font-size:12px;margin:6px 0 10px}
+.msg.ai td{white-space:normal;padding:5px 6px;vertical-align:top}
+.msg.ai th{padding:5px 6px}
+.msg.ai .tbl-scroll{margin:0 -2px}
+.msg .err{color:var(--bad);font-size:12px}
+.thinking{color:var(--muted);font-style:italic}
+.chips{display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 10px}
+.chips button{border:1px solid var(--line);background:var(--surface-2);border-radius:99px;padding:5px 10px;font-size:12px}
+.chips button:hover{border-color:var(--accent);color:var(--accent)}
+.composer{display:flex;gap:8px;padding:10px 16px 14px;border-top:1px solid var(--line);align-items:flex-end}
+.composer textarea{flex:1;resize:none;border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--surface-2);min-height:40px;max-height:140px;font-size:13.5px}
+.coach-off{padding:16px;color:var(--muted);font-size:13px}
+
+/* Data */
+.form{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:700px){.form{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.form label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);min-width:0}
+.form input,.form select{border:1px solid var(--line);border-radius:7px;padding:7px 9px;background:var(--surface-2);color:var(--ink);font-size:13.5px;min-width:0;width:100%}
+.steps{margin:0;padding-left:18px;font-size:13px}
+.steps li{margin:4px 0}
+.drop{border:1.5px dashed var(--line);border-radius:var(--r);padding:16px;text-align:center;color:var(--muted);font-size:13px}
+.drop.over{border-color:var(--accent);color:var(--accent)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.note{font-size:12.5px;color:var(--muted)}
+.status{font-size:13px;margin-top:8px;min-height:20px}
+.confirm{display:inline-flex;gap:8px;align-items:center;flex-wrap:wrap}
+.foot{grid-column:span 12;color:var(--muted);font-size:12px;margin-top:6px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <span class="stripes" aria-hidden="true"><i style="background:var(--swim)"></i><i style="background:var(--bike)"></i><i style="background:var(--run)"></i></span>
+      <h1>Triatlon Kokpit</h1>
+    </div>
+    <span class="who" id="who"></span>
+    <span class="chip demo" id="srcChip"><span class="dot"></span><span id="srcText">Ukázková data</span></span>
+    <nav class="nav" aria-label="Sekce">
+      <a href="#dnes" class="on">Dnes</a>
+      <a href="#zatez">Zátěž</a>
+      <a href="#profil">Radar</a>
+      <a href="#regenerace">Regenerace</a>
+      <a href="#trener">Trenér</a>
+      <a href="#data">Data</a>
+    </nav>
+  </div>
+</header>
+
+<main class="shell wrap">
+  <div class="grid" id="dash">
+    <div class="banner" id="demoBanner">
+      <span><b>Ukázková data.</b> Takhle bude kokpit vypadat s tvými daty z Garminu. Nahraj export z Garmin Connect nebo intervals.icu a vše se přepočítá.</span>
+      <a class="btn primary" href="#data">Nahrát moje data</a>
+    </div>
+
+    <div class="section-title" id="dnes"><h2>Dnes</h2><span class="note" id="todayDate"></span></div>
+
+    <section class="card c7">
+      <div class="card-head"><div><h2>Připravenost</h2><div class="sub">Kombinace HRV, klidového tepu, spánku a formy (TSB)</div></div><span id="readyPill"></span></div>
+      <div class="today">
+        <div class="gauge" id="gauge"></div>
+        <div>
+          <div class="verdict" id="verdict"></div>
+          <p class="reco" id="reco"></p>
+          <div class="factors" id="factors"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card c5" id="raceCard">
+      <div class="race-top">
+        <div><h2 id="raceName">Závod</h2><div class="sub" id="raceDate"></div></div>
+        <div class="tminus" id="tminus"></div>
+      </div>
+      <div class="phases" id="phases"></div>
+      <div class="phase-dates" id="phaseDates"></div>
+      <div class="legs" id="legs"></div>
+      <div class="proj" id="proj"></div>
+    </section>
+
+    <div class="kpis" id="kpis"></div>
+
+    <div class="section-title"><h2>Postřehy a doporučení</h2></div>
+    <section class="card c12">
+      <div class="insights" id="insights"></div>
+    </section>
+
+    <div class="section-title" id="zatez"><h2>Zátěž a forma</h2></div>
+    <section class="card c12">
+      <div class="card-head">
+        <div><h2>Kondice, únava, forma</h2><div class="sub">Performance Management Chart: CTL (42 dní), ATL (7 dní), TSB = forma. Šedé sloupce = denní TSS.</div></div>
+        <div class="seg" id="rangeSeg"><button data-r="42">6 týdnů</button><button data-r="90" class="on">3 měsíce</button><button data-r="180">6 měsíců</button></div>
+      </div>
+      <div class="chart" id="pmc"></div>
+      <div class="legend" style="margin-top:8px"><span><i style="background:var(--ctl)"></i>Kondice CTL</span><span><i style="background:var(--atl)"></i>Únava ATL</span><span><i style="background:var(--tsb)"></i>Forma TSB</span><span><i class="sq" style="background:var(--muted);opacity:.35"></i>TSS</span></div>
+    </section>
+
+    <section class="card c7">
+      <div class="card-head"><div><h2>Týdenní objem</h2><div class="sub">Hodiny podle disciplíny, posledních 12 týdnů. Čárkovaně cíl.</div></div></div>
+      <div class="chart" id="weekly"></div>
+      <div class="legend" style="margin-top:8px"><span><i class="sq b-swim"></i>Plavání</span><span><i class="sq b-bike"></i>Kolo</span><span><i class="sq b-run"></i>Běh</span><span><i class="sq b-strength"></i>Posilovna</span></div>
+    </section>
+
+    <section class="card c5">
+      <div class="card-head"><div><h2>Intenzita</h2><div class="sub">Čas v tepových zónách, posledních 28 dní</div></div><span id="polarPill"></span></div>
+      <div class="zbar" id="zTotal"></div>
+      <div id="zSports"></div>
+      <div class="polar" id="polar"></div>
+    </section>
+
+    <div class="section-title" id="profil"><h2>Profil sportovce</h2></div>
+    <section class="card c7">
+      <div class="card-head"><div><h2>Radar schopností</h2><div class="sub">Skóre 0–100: posledních 28 dní (plně) proti předchozím 28 dnům (čárkovaně)</div></div></div>
+      <div class="radar-wrap"><div class="chart" id="radar"></div><div class="rlist" id="rlist"></div></div>
+    </section>
+
+    <section class="card c5">
+      <div class="card-head"><div><h2>Pravidelnost</h2><div class="sub">Denní TSS, posledních 26 týdnů</div></div><span class="note" id="streak"></span></div>
+      <div class="heat-scroll"><div class="heat" id="heat"></div></div>
+      <div class="heat-legend">Méně <i style="background:var(--surface-2);border:1px solid var(--line)"></i><i class="h1" style="background:color-mix(in srgb,var(--accent) 25%,var(--surface))"></i><i style="background:color-mix(in srgb,var(--accent) 48%,var(--surface))"></i><i style="background:color-mix(in srgb,var(--accent) 72%,var(--surface))"></i><i style="background:var(--accent)"></i> Více</div>
+      <div class="polar" id="consist" style="margin-top:14px"></div>
+    </section>
+
+    <div class="section-title" id="regenerace"><h2>Regenerace</h2></div>
+    <section class="card c7">
+      <div class="card-head"><div><h2>Variabilita srdečního tepu</h2><div class="sub">HRV ráno (body), 7denní průměr (čára), tvé normální pásmo z 60 dní (podbarvení)</div></div><span id="hrvPill"></span></div>
+      <div class="chart" id="hrv"></div>
+    </section>
+    <section class="card c5">
+      <div class="card-head"><div><h2>Klidový tep a spánek</h2><div class="sub">Posledních 42 dní</div></div></div>
+      <div class="chart" id="rhr"></div>
+      <div class="chart" id="sleep" style="margin-top:10px"></div>
+    </section>
+
+    <div class="section-title"><h2>Poslední tréninky</h2></div>
+    <section class="card c12">
+      <div class="tbl-scroll"><table id="acts"></table></div>
+      <div class="row" style="margin-top:10px"><button class="btn" id="moreActs">Zobrazit další</button></div>
+    </section>
+
+    <div class="section-title" id="data"><h2>Data a nastavení</h2></div>
+    <section class="card c6">
+      <div class="card-head"><div><h2>Napojení na Garmin</h2><div class="sub">Tři cesty, jak dostat data do kokpitu</div></div></div>
+      <ol class="steps">
+        <li><b>Export z Garmin Connect</b> (nejrychlejší): connect.garmin.com → Aktivity → Všechny aktivity → vpravo nahoře <i>Exportovat CSV</i>. Soubor přetáhni sem.</li>
+        <li><b>intervals.icu</b> (doporučuju pro HRV a spánek): propoj ho s Garminem, pak Nastavení → <i>Download activities CSV</i> a <i>Wellness CSV</i>.</li>
+        <li><b>Automatická synchronizace</b>: připoj v Claude konektor <i>Strava</i> nebo <i>athletedata</i> a Claude ti data zapíše do kokpitu sám.</li>
+      </ol>
+      <div class="drop" id="drop" style="margin-top:12px">
+        Přetáhni sem CSV s aktivitami nebo wellness daty<br>
+        <div class="row" style="justify-content:center;margin-top:10px">
+          <label class="btn primary" for="fileIn">Vybrat soubory</label>
+          <input type="file" id="fileIn" accept=".csv,text/csv" multiple hidden>
+        </div>
+      </div>
+      <div class="status" id="importStatus"></div>
+    </section>
+
+    <section class="card c6">
+      <div class="card-head"><div><h2>Profil a cíle</h2><div class="sub">Používá se pro výpočty zón, TSS a doporučení</div></div></div>
+      <form class="form" id="profForm">
+        <label for="p_name">Jméno<input id="p_name" name="name"></label>
+        <label for="p_maxHr">Max. tep<input id="p_maxHr" name="maxHr" type="number" min="120" max="230"></label>
+        <label for="p_restHr">Klidový tep<input id="p_restHr" name="restHr" type="number" min="30" max="90"></label>
+        <label for="p_ftp">FTP kolo (W)<input id="p_ftp" name="ftp" type="number" min="80" max="500"></label>
+        <label for="p_runPace">Prahové tempo běh<input id="p_runPace" name="runPace" placeholder="4:45"></label>
+        <label for="p_css">CSS plavání /100 m<input id="p_css" name="css" placeholder="1:45"></label>
+        <label for="p_weeklyHours">Cíl hodin / týden<input id="p_weeklyHours" name="weeklyHours" type="number" min="2" max="30" step="0.5"></label>
+        <label for="p_strengthGoal">Posilovna / týden<input id="p_strengthGoal" name="strengthGoal" type="number" min="0" max="5"></label>
+        <label for="p_raceType">Typ závodu<select id="p_raceType" name="raceType"><option value="sprint">Sprint</option><option value="olympic">Olympijský</option><option value="70.3">Ironman 70.3</option><option value="ironman">Ironman</option></select></label>
+        <label for="p_raceName">Název závodu<input id="p_raceName" name="raceName"></label>
+        <label for="p_raceDate">Datum závodu<input id="p_raceDate" name="raceDate" type="date"></label>
+        <label style="justify-content:flex-end"><button class="btn primary" type="submit">Uložit profil</button></label>
+      </form>
+      <div class="status" id="profStatus"></div>
+      <div class="row" style="margin-top:6px">
+        <span class="confirm" id="clearWrap"><button class="btn danger" id="clearBtn" type="button">Smazat nahraná data</button></span>
+      </div>
+    </section>
+
+    <p class="foot">Výpočty: TSS z Garminu, jinak odhad z tepu (hrTSS). CTL/ATL jako exponenciální průměry 42/7 dní. Doporučení nejsou lékařská rada; při bolesti nebo nemoci se poraď s lékařem.</p>
+  </div>
+
+  <aside class="coach" id="trener" aria-label="AI trenér">
+    <div class="coach-head">
+      <h2><span class="avatar">K</span>Trenér AI</h2>
+      <p>Profi trenér triatlonu a silového tréninku. Vidí všechna tvoje data v kokpitu.</p>
+    </div>
+    <div class="msgs" id="msgs"></div>
+    <div class="chips" id="chips"></div>
+    <form class="composer" id="composer">
+      <textarea id="q" rows="1" placeholder="Zeptej se trenéra…" aria-label="Otázka pro trenéra"></textarea>
+      <button class="btn primary" id="sendBtn" type="submit">Poslat</button>
+      <button class="btn" id="stopBtn" type="button" hidden>Stop</button>
+    </form>
+  </aside>
+</main>
+
+<script>
+(() => {
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const r0 = v => Math.round(v), r1 = v => Math.round(v * 10) / 10;
+const pad = n => String(n).padStart(2, "0");
+const iso = d => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+const parseISO = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const addDays = (s, n) => { const d = parseISO(s); d.setDate(d.getDate() + n); return iso(d); };
+const diffDays = (a, b) => Math.round((parseISO(b) - parseISO(a)) / 864e5);
+const dowMon = s => (parseISO(s).getDay() + 6) % 7;
+const fmtD = s => { const d = parseISO(s); return d.getDate() + ". " + (d.getMonth() + 1) + "."; };
+const fmtDL = s => parseISO(s).toLocaleDateString("cs-CZ", { weekday: "long", day: "numeric", month: "long" });
+const fmtDur = m => { m = Math.round(m); const h = Math.floor(m / 60); return h ? h + ":" + pad(m % 60) + " h" : m + " min"; };
+const mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
+const sd = a => { if (a.length < 2) return 0; const m = mean(a); return Math.sqrt(mean(a.map(x => (x - m) ** 2))); };
+const TODAY = iso(new Date());
+
+const SPORTS = { swim: "Plavání", bike: "Kolo", run: "Běh", strength: "Posilovna", other: "Ostatní" };
+const RACE = {
+  sprint:   { label: "Sprint",      ctl: 50,  taper: 7,  legs: [["Plavání","750 m"],["Kolo","20 km"],["Běh","5 km"]] },
+  olympic:  { label: "Olympijský",  ctl: 65,  taper: 10, legs: [["Plavání","1,5 km"],["Kolo","40 km"],["Běh","10 km"]] },
+  "70.3":   { label: "Ironman 70.3",ctl: 80,  taper: 14, legs: [["Plavání","1,9 km"],["Kolo","90 km"],["Běh","21,1 km"]] },
+  ironman:  { label: "Ironman",     ctl: 100, taper: 21, legs: [["Plavání","3,8 km"],["Kolo","180 km"],["Běh","42,2 km"]] }
+};
+const DEFAULT_PROFILE = { name: "Sportovec", maxHr: 188, restHr: 46, ftp: 250, runPace: "4:45", css: "1:45", weeklyHours: 10, strengthGoal: 2, raceType: "70.3", raceName: "Ironman 70.3", raceDate: addDays(TODAY, 68) };
+
+const S = { profile: { ...DEFAULT_PROFILE }, userActs: [], userWell: [], acts: [], well: [], source: "demo", range: 90, m: null, actsShown: 12, db: null };
+try { const r = localStorage.getItem("tk_range"); if (r) S.range = +r || 90; } catch (e) {}
+
+/* ---------------- Demo data ---------------- */
+function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const KIND = {
+  easy:  { IF: .68, hr: 132, z: [.35,.55,.08,.02,0] },
+  tempo: { IF: .83, hr: 148, z: [.15,.30,.35,.18,.02] },
+  int:   { IF: .90, hr: 152, z: [.22,.30,.13,.20,.15] },
+  long:  { IF: .72, hr: 136, z: [.30,.55,.12,.03,0] },
+  str:   { IF: 0,   hr: 108, z: [.60,.30,.10,0,0] }
+};
+const TEMPLATE = [
+  [["swim","easy",50,"Plavání – aerobní vytrvalost"],["strength","str",45,"Posilovna – celé tělo"]],
+  [["bike","int",75,"Kolo – VO2max 5×4 min"]],
+  [["run","easy",50,"Běh – klidný Z2"],["swim","tempo",45,"Plavání – CSS série 8×100 m"]],
+  [["bike","tempo",70,"Kolo – sweet spot 3×12 min"],["strength","str",40,"Posilovna – core a stabilita"]],
+  [["swim","easy",40,"Plavání – technika"]],
+  [["bike","long",180,"Kolo – dlouhá vytrvalost"],["run","tempo",20,"Brick – běh po kole"]],
+  [["run","long",85,"Běh – dlouhý"]]
+];
+function genDemo() {
+  const rnd = mulberry32(11), acts = [], start = addDays(TODAY, -181);
+  for (let i = 0; i < 181; i++) {
+    const date = addDays(start, i), dow = dowMon(date), week = Math.floor(i / 7);
+    let scale = (week % 4 === 3 ? 0.62 : 1) * (0.78 + Math.min(week, 24) * 0.012);
+    if (i >= 170) scale *= 1.22;
+    for (let [sport, kind, dur, name] of TEMPLATE[dow]) {
+      if (rnd() < 0.07) continue;
+      if (dow === 2 && sport === "run" && week % 2) { kind = "int"; name = "Běh – intervaly 5×1 km"; }
+      const d = Math.round(dur * scale * (0.9 + rnd() * 0.2)), K = KIND[kind];
+      let tss = kind === "str" ? d * 0.6 : d / 60 * K.IF * K.IF * 100;
+      const v = sport === "swim" ? 3.1 : sport === "bike" ? { easy: 27, tempo: 31, int: 29, long: 29 }[kind] : sport === "run" ? { easy: 10.9, tempo: 12.4, int: 12, long: 10.7 }[kind] : 0;
+      const dist = sport === "strength" ? 0 : r1(d / 60 * v * (0.96 + rnd() * 0.08));
+      acts.push({ id: date + sport + i + kind, date, sport, name, dur: d, dist, tss: r0(tss * (0.93 + rnd() * 0.14)), hr: r0(K.hr + (rnd() - .5) * 8), elev: sport === "bike" ? r0(dist * (6 + rnd() * 6)) : sport === "run" ? r0(dist * 5) : 0, z: K.z.map(f => r0(f * d)) });
+    }
+  }
+  const tmp = computeDaily(acts, [], start, TODAY), well = [];
+  tmp.forEach((d, i) => {
+    const f = d.atl - d.ctl, n = () => (rnd() + rnd() + rnd() - 1.5);
+    const hrv = r0(64 - 0.32 * f + n() * 6 - (i > 174 ? 6 : 0));
+    const sleep = r1(clamp(7.35 + n() * 0.9 - (i > 176 ? 0.5 : 0), 5, 9.4));
+    well.push({ date: d.date, hrv, rhr: r0(46 + 0.11 * f + n() * 2 + (i > 175 ? 3 : 0)), sleep, sleepScore: r0(clamp(sleep / 8 * 84 + n() * 6, 40, 99)), bb: r0(clamp(62 + (hrv - 64) * 1.3 + (sleep - 7) * 9 - f * 0.25 + n() * 5, 10, 100)), stress: r0(clamp(27 + f * 0.3 + n() * 6, 10, 70)), weight: r1(72.6 - i * 0.006 + n() * 0.3) });
+  });
+  return { acts, well };
+}
+
+/* ---------------- Metrics ---------------- */
+function computeDaily(acts, well, start, end) {
+  const n = diffDays(start, end) + 1, days = [], idx = {};
+  for (let i = 0; i < n; i++) { const date = addDays(start, i); idx[date] = i; days.push({ date, tss: 0, mins: 0, sport: { swim: 0, bike: 0, run: 0, strength: 0, other: 0 }, sportMin: { swim: 0, bike: 0, run: 0, strength: 0, other: 0 }, z: [0,0,0,0,0], n: 0 }); }
+  for (const a of acts) { const i = idx[a.date]; if (i == null) continue; const d = days[i]; d.tss += a.tss || 0; d.mins += a.dur || 0; d.sport[a.sport] = (d.sport[a.sport] || 0) + (a.tss || 0); d.sportMin[a.sport] = (d.sportMin[a.sport] || 0) + (a.dur || 0); d.n++; (a.z || []).forEach((v, k) => d.z[k] += v || 0); }
+  const seed = mean(days.slice(0, 28).map(d => d.tss));
+  let ctl = seed, atl = seed; const sc = { swim: 0, bike: 0, run: 0, strength: 0, other: 0 };
+  for (const s in sc) sc[s] = mean(days.slice(0, 28).map(d => d.sport[s]));
+  const wmap = {}; for (const w of well) wmap[w.date] = w;
+  for (const d of days) {
+    d.tsb = ctl - atl;
+    ctl += (d.tss - ctl) / 42; atl += (d.tss - atl) / 7;
+    d.ctl = ctl; d.atl = atl;
+    d.sctl = {}; for (const s in sc) { sc[s] += (d.sport[s] - sc[s]) / 42; d.sctl[s] = sc[s]; }
+    d.w = wmap[d.date] || null;
+  }
+  return days;
+}
+
+function computeAll() {
+  const P = S.profile, acts = S.acts, well = S.well;
+  let start = addDays(TODAY, -181);
+  for (const a of acts) if (a.date < start && diffDays(a.date, TODAY) <= 400) start = a.date;
+  const days = computeDaily(acts, well, start, TODAY);
+  const L = days.length, last = days[L - 1], slice = (a, b) => days.slice(Math.max(0, L - a), L - (b || 0));
+  // HRV baseline & readiness per day
+  for (let i = 0; i < L; i++) {
+    const d = days[i], win = days.slice(Math.max(0, i - 60), i).map(x => x.w?.hrv).filter(Number.isFinite);
+    const w7 = days.slice(Math.max(0, i - 6), i + 1).map(x => x.w?.hrv).filter(Number.isFinite);
+    const rw = days.slice(Math.max(0, i - 60), i).map(x => x.w?.rhr).filter(Number.isFinite);
+    d.hrvBase = win.length >= 10 ? mean(win) : null; d.hrvSd = win.length >= 10 ? Math.max(sd(win), 2) : null;
+    d.hrv7 = w7.length ? mean(w7) : null; d.rhrBase = rw.length >= 10 ? mean(rw) : null;
+    d.ready = readiness(d);
+  }
+  // pick the most recent day with wellness as "today's" wellness
+  const todayW = last.w || days[L - 2]?.w || null;
+  const m = { days, last, todayW };
+  m.ramp = last.ctl - days[Math.max(0, L - 8)].ctl;
+  m.acwr = last.ctl > 0 ? last.atl / last.ctl : 0;
+  const w7 = slice(7).map(d => d.tss); m.monotony = sd(w7) > 0 ? mean(w7) / sd(w7) : 0; m.strain = w7.reduce((a, b) => a + b, 0) * m.monotony;
+  m.hours7 = slice(7).reduce((a, d) => a + d.mins, 0) / 60;
+  m.hoursPrev7 = slice(14, 7).reduce((a, d) => a + d.mins, 0) / 60;
+  // zones 28d
+  const zt = [0,0,0,0,0], zs = {}; for (const a of acts) if (diffDays(a.date, TODAY) < 28 && diffDays(a.date, TODAY) >= 0) { (a.z || []).forEach((v, k) => { zt[k] += v || 0; }); if (a.z) { zs[a.sport] = zs[a.sport] || [0,0,0,0,0]; a.z.forEach((v, k) => zs[a.sport][k] += v || 0); } }
+  m.zones = zt; m.zonesSport = zs; const zsum = zt.reduce((a, b) => a + b, 0) || 1;
+  m.polar = { low: (zt[0] + zt[1]) / zsum, mid: zt[2] / zsum, high: (zt[3] + zt[4]) / zsum, has: zsum > 1 };
+  // weekly 12
+  const thisMon = addDays(TODAY, -dowMon(TODAY)); m.weeks = [];
+  for (let k = 11; k >= 0; k--) { const ws = addDays(thisMon, -7 * k), wk = { start: ws, h: { swim: 0, bike: 0, run: 0, strength: 0, other: 0 }, tss: 0 }; for (const d of days) { const dd = diffDays(ws, d.date); if (dd >= 0 && dd < 7) { for (const s in wk.h) wk.h[s] += d.sportMin[s] / 60; wk.tss += d.tss; } } m.weeks.push(wk); }
+  // wellness aggregates
+  const W = k => slice(k).map(d => d.w).filter(Boolean);
+  m.sleep7 = mean(W(7).map(w => w.sleep).filter(Number.isFinite));
+  m.rhr7 = mean(W(7).map(w => w.rhr).filter(Number.isFinite));
+  m.hasWell = W(14).length > 0;
+  m.radar = radarScores(days, 0); m.radarPrev = radarScores(days, 28);
+  m.race = raceProjection(days);
+  m.insights = insights(m);
+  S.m = m;
+}
+
+function readiness(d) {
+  const w = d.w; if (!w) return null;
+  const parts = [];
+  if (Number.isFinite(w.hrv) && d.hrvBase) parts.push([0.35, clamp(60 + 22 * (w.hrv - d.hrvBase) / d.hrvSd, 0, 100)]);
+  if (Number.isFinite(w.rhr) && d.rhrBase) parts.push([0.2, clamp(70 - 10 * (w.rhr - d.rhrBase), 0, 100)]);
+  if (Number.isFinite(w.sleep)) parts.push([0.25, clamp((w.sleep - 5) / 3 * 100, 0, 100)]);
+  parts.push([0.2, clamp(60 + d.tsb * 2, 0, 100)]);
+  const tw = parts.reduce((a, p) => a + p[0], 0);
+  return parts.reduce((a, p) => a + p[0] * p[1], 0) / tw;
+}
+
+function radarScores(days, offset) {
+  const P = S.profile, L = days.length, end = L - offset, win = days.slice(Math.max(0, end - 28), end);
+  if (!win.length) return null;
+  const last = win[win.length - 1], target = RACE[P.raceType]?.ctl || 70, share = { swim: .2, bike: .45, run: .35 };
+  const sum = f => win.reduce((a, d) => a + f(d), 0);
+  const strWeek = win.reduce((a, d) => a + (d.sportMin.strength > 0 ? 1 : 0), 0) / 4;
+  const lowMin = sum(d => d.z[0] + d.z[1]), highMin = sum(d => d.z[3] + d.z[4]), hours = sum(d => d.mins) / 60;
+  const readyArr = win.map(d => d.ready).filter(Number.isFinite);
+  const active = win.filter(d => d.n > 0).length;
+  const weeksHit = [0,1,2,3].filter(k => win.slice(k * 7, k * 7 + 7).reduce((a, d) => a + d.mins, 0) / 60 >= P.weeklyHours * 0.75).length;
+  return [
+    ["Plavání", clamp(100 * last.sctl.swim / (target * share.swim), 0, 100)],
+    ["Kolo", clamp(100 * last.sctl.bike / (target * share.bike), 0, 100)],
+    ["Běh", clamp(100 * last.sctl.run / (target * share.run), 0, 100)],
+    ["Síla", clamp(100 * strWeek / Math.max(1, P.strengthGoal), 0, 100)],
+    ["Aerobní báze", clamp(100 * (lowMin / 60) / (0.8 * P.weeklyHours * 4), 0, 100)],
+    ["Intenzita", clamp(100 * (highMin / 4) / 75, 0, 100)],
+    ["Regenerace", readyArr.length ? clamp(mean(readyArr), 0, 100) : 50],
+    ["Pravidelnost", clamp(55 * active / 24 + 45 * weeksHit / 4, 0, 100)]
+  ].map(([k, v]) => [k, r0(v)]);
+}
+
+function raceProjection(days) {
+  const P = S.profile, R = RACE[P.raceType] || RACE["70.3"];
+  if (!P.raceDate) return null;
+  const left = diffDays(TODAY, P.raceDate), last = days[days.length - 1];
+  const avg = mean(days.slice(-28).map(d => d.tss));
+  let ctl = last.ctl, atl = last.atl;
+  for (let i = 1; i <= Math.max(0, left); i++) { const t = left - i < R.taper ? avg * 0.55 : avg * 1.04; ctl += (t - ctl) / 42; atl += (t - atl) / 7; }
+  return { left, R, ctl, tsb: ctl - atl, avg };
+}
+
+function insights(m) {
+  const out = [], P = S.profile, L = m.last, tsb = L.tsb;
+  const add = (sev, title, text, tag, ask) => out.push({ sev, title, text, tag, ask });
+  if (tsb < -30) add("bad", "Vysoká únava", `Forma TSB ${r0(tsb)}. Jsi hluboko v únavě, riziko přetížení a nemoci roste. Zařaď 2–3 lehčí dny.`, "TSB", "Mám TSB pod -30. Jak upravit příští 3 dny?");
+  else if (tsb < -10) add("good", "Produktivní tréninková zóna", `TSB ${r0(tsb)}: zátěž buduje kondici. Hlídej spánek a HRV.`, "TSB");
+  else if (tsb <= 5) add("info", "Udržovací zóna", `TSB ${r0(tsb)}: nízká únava, ale i malý tréninkový podnět. Pro růst přidej objem.`, "TSB");
+  else if (tsb <= 25) add("good", "Čerstvá forma", `TSB +${r0(tsb)}: ideální na závod nebo test (FTP, CSS, 5 km).`, "TSB", "Jsem čerstvý. Jaký test výkonnosti mám udělat?");
+  else add("warn", "Ztráta kondice", `TSB +${r0(tsb)}: dlouho nízká zátěž, kondice klesá.`, "TSB");
+  if (m.ramp > 8) add("bad", "Příliš rychlý nárůst zátěže", `Kondice CTL +${r1(m.ramp)} za týden. Bezpečně je do +5 až +7.`, "Ramp", "CTL mi roste o víc než 8 za týden. Je to problém?");
+  else if (m.ramp > 6) add("warn", "Nárůst zátěže na hraně", `CTL +${r1(m.ramp)} za týden. Ještě jeden takový týden, pak odlehčení.`, "Ramp");
+  else if (m.ramp < -3 && (m.race?.left ?? 99) > 21) add("info", "Kondice klesá", `CTL ${r1(m.ramp)} za týden. Pokud nejde o plánované odlehčení, vrať objem.`, "Ramp");
+  if (m.acwr > 1.5) add("bad", "Akutní přetížení", `Poměr akutní/chronické zátěže ${m.acwr.toFixed(2)} (bezpečně 0,8–1,3). Vysoké riziko zranění.`, "ACWR");
+  else if (m.acwr > 1.3) add("warn", "Zvýšená akutní zátěž", `ACWR ${m.acwr.toFixed(2)}. Nad 1,3 roste riziko zranění, hlavně u běhu.`, "ACWR", "Mám ACWR nad 1,3. Co mám ubrat?");
+  const hb = L.hrvBase, h7 = L.hrv7;
+  if (hb && h7) {
+    if (h7 < hb - L.hrvSd) add("bad", "HRV pod normálem", `7denní HRV ${r0(h7)} ms vs. tvůj normál ${r0(hb)} ms. Tělo nestíhá regenerovat.`, "HRV", "Moje HRV je pod normálem. Co dělat tento týden?");
+    else if (h7 < hb - 0.5 * L.hrvSd) add("warn", "HRV klesá", `7denní HRV ${r0(h7)} ms, normál ${r0(hb)} ms. Sleduj trend další 2–3 dny.`, "HRV");
+    else add("good", "HRV v normálu", `7denní HRV ${r0(h7)} ms (normál ${r0(hb)} ± ${r0(L.hrvSd)}). Nervový systém zvládá zátěž.`, "HRV");
+  }
+  if (L.rhrBase && m.rhr7 && m.rhr7 > L.rhrBase + 4) add("warn", "Zvýšený klidový tep", `${r0(m.rhr7)} tepů/min vs. normál ${r0(L.rhrBase)}. Může jít o únavu, stres nebo začínající nemoc.`, "RHR");
+  if (m.sleep7 && m.sleep7 < 7) add("warn", "Málo spánku", `Průměr ${r1(m.sleep7).toLocaleString("cs-CZ")} h za 7 dní. Při tomhle objemu tréninku potřebuješ 8+ h.`, "Spánek", "Jak zlepšit spánek při triatlonovém tréninku?");
+  if (m.polar.has) {
+    if (m.polar.mid > 0.2) add("warn", "Moc času v šedé zóně", `${r0(m.polar.mid * 100)} % času v Z3. Lehké tréninky jezdi lehčeji, těžké těžší (cíl 80/20).`, "Zóny", "Mám moc času v Z3. Jak přestavět týden na 80/20?");
+    else if (m.polar.low >= 0.75) add("good", "Polarizovaná intenzita", `${r0(m.polar.low * 100)} % v Z1–2, ${r0(m.polar.high * 100)} % v Z4–5. Tak trénují elitní vytrvalci.`, "Zóny");
+  }
+  const rd = m.radar; if (rd) { const tri = rd.slice(0, 3).sort((a, b) => a[1] - b[1])[0]; if (tri[1] < 70) add("info", `Slabina: ${tri[0].toLowerCase()}`, `Skóre ${tri[1]}/100 vůči cíli pro ${RACE[P.raceType].label}. Přidej 1 trénink týdně v této disciplíně.`, "Radar", `Moje nejslabší disciplína je ${tri[0].toLowerCase()}. Jak ji zlepšit?`); }
+  const str = rd?.[3]?.[1]; if (str != null && str < 75) add("warn", "Málo posilovny", `Posilovna ${r1(str / 100 * P.strengthGoal).toLocaleString("cs-CZ")}× týdně, cíl ${P.strengthGoal}×. Síla chrání před zraněním a zlepšuje ekonomiku běhu.`, "Síla", "Navrhni mi silový trénink pro triatlonistu 2× týdně.");
+  else if (str != null) add("good", "Posilovna pravidelně", `Plníš cíl ${P.strengthGoal}× týdně. V posledních 3 týdnech před závodem sniž na 1× údržbu.`, "Síla");
+  if (m.monotony > 2) add("warn", "Monotónní trénink", `Monotonie ${m.monotony.toFixed(1)} (nad 2,0 roste riziko přetrénování). Střídej těžké a lehké dny výrazněji.`, "Monotonie");
+  if (m.race && m.race.left > 0) { const pr = m.race; const gap = pr.R.ctl - pr.ctl; if (gap > 8) add("warn", "Kondice na závod zatím nestačí", `Při současném tempu dosáhneš CTL ${r0(pr.ctl)} v den závodu, cíl je ${pr.R.ctl}. Zvyš týdenní TSS asi o ${r0(gap * 1.2)} %.`, "Závod", "Nestíhám kondici na závod. Jak upravit plán?"); else add("good", "Na závod to vychází", `Projekce CTL v den závodu ${r0(pr.ctl)} (cíl ${pr.R.ctl}), forma TSB ${pr.tsb > 0 ? "+" : ""}${r0(pr.tsb)}.`, "Závod"); }
+  const order = { bad: 0, warn: 1, info: 2, good: 3 };
+  return out.sort((a, b) => order[a.sev] - order[b.sev]);
+}
+
+/* ---------------- Render helpers ---------------- */
+function niceTicks(lo, hi, count) {
+  const raw = (hi - lo) / count || 1, mag = 10 ** Math.floor(Math.log10(raw)), n = raw / mag;
+  const step = (n < 1.5 ? 1 : n < 3 ? 2 : n < 7 ? 5 : 10) * mag, t = [];
+  for (let v = Math.floor(lo / step) * step; v <= hi + step * 0.001; v += step) t.push(+v.toFixed(6));
+  if (t[t.length - 1] < hi) t.push(t[t.length - 1] + step);
+  return t;
+}
+const pathOf = pts => pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + "," + p[1].toFixed(1)).join("");
+function attachHover(el, svg, n, xOf, html, m, H) {
+  let tip = el.querySelector(".tip"); if (!tip) { tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true; el.appendChild(tip); }
+  const line = svg.querySelector(".hoverline");
+  const move = ev => {
+    const r = svg.getBoundingClientRect(), x = (ev.touches ? ev.touches[0].clientX : ev.clientX) - r.left;
+    let best = 0, bd = 1e9; for (let i = 0; i < n; i++) { const dd = Math.abs(xOf(i) - x); if (dd < bd) { bd = dd; best = i; } }
+    const px = xOf(best); line.setAttribute("x1", px); line.setAttribute("x2", px); line.style.display = "";
+    tip.innerHTML = html(best); tip.hidden = false;
+    const tw = tip.offsetWidth; tip.style.left = clamp(px + 12, 0, r.width - tw) + "px"; tip.style.top = m.t + "px";
+    if (px + 12 + tw > r.width) tip.style.left = Math.max(0, px - tw - 12) + "px";
+  };
+  const leave = () => { tip.hidden = true; line.style.display = "none"; };
+  svg.addEventListener("mousemove", move); svg.addEventListener("touchmove", move, { passive: true }); svg.addEventListener("mouseleave", leave); svg.addEventListener("touchend", leave);
+}
+function spark(vals, cls) {
+  const v = vals.filter(Number.isFinite); if (v.length < 2) return "";
+  const lo = Math.min(...v), hi = Math.max(...v), W = 200, H = 30, n = vals.length;
+  const pts = []; vals.forEach((x, i) => { if (Number.isFinite(x)) pts.push([i / (n - 1) * W, H - 3 - (x - lo) / ((hi - lo) || 1) * (H - 6)]); });
+  const lp = pts[pts.length - 1];
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><path d="${pathOf(pts)}" fill="none" stroke="var(--${cls})" stroke-width="1.6" vector-effect="non-scaling-stroke"/><circle cx="${lp[0]}" cy="${lp[1]}" r="2.6" fill="var(--${cls})"/></svg>`;
+}
+
+/* ---------------- Render ---------------- */
+function render() {
+  computeAll();
+  const m = S.m, P = S.profile, L = m.last;
+  $("#who").textContent = P.name ? P.name + " · " + RACE[P.raceType].label : "";
+  const demo = S.source === "demo";
+  $("#demoBanner").hidden = !demo;
+  $("#srcChip").className = "chip " + (demo ? "demo" : "live");
+  $("#srcText").textContent = demo ? "Ukázková data" : "Tvoje data";
+  $("#todayDate").textContent = fmtDL(TODAY);
+  renderToday(m); renderRace(m); renderKPIs(m); renderInsights(m);
+  drawPMC(); drawWeekly(); renderZones(m); drawRadar(); renderHeat(m); drawHRV(); drawRHR(); drawSleep(); renderActs();
+  fillProfileForm();
+}
+
+function renderToday(m) {
+  const d = m.last, rd = Number.isFinite(d.ready) ? d.ready : (m.days[m.days.length - 2]?.ready ?? null), w = m.todayW;
+  const val = rd == null ? null : r0(rd);
+  const col = val == null ? "muted" : val >= 75 ? "good" : val >= 55 ? "warn" : "bad";
+  const a0 = -210, a1 = 30, R = 80, cx = 100, cy = 100, ang = v => (a0 + (a1 - a0) * v / 100) * Math.PI / 180;
+  const arc = (v0, v1) => { const p0 = [cx + R * Math.cos(ang(v0)), cy + R * Math.sin(ang(v0))], p1 = [cx + R * Math.cos(ang(v1)), cy + R * Math.sin(ang(v1))]; return `M${p0[0].toFixed(1)},${p0[1].toFixed(1)} A${R},${R} 0 ${(v1 - v0) * 2.4 > 180 ? 1 : 0} 1 ${p1[0].toFixed(1)},${p1[1].toFixed(1)}`; };
+  $("#gauge").innerHTML = `<svg viewBox="0 0 200 170" width="200" height="170" role="img" aria-label="Připravenost ${val ?? "neznámá"} ze 100"><path d="${arc(0, 100)}" fill="none" stroke="var(--line)" stroke-width="14" stroke-linecap="round"/>${val ? `<path d="${arc(0, Math.max(1, val))}" fill="none" stroke="var(--${col})" stroke-width="14" stroke-linecap="round"/>` : ""}<text x="22" y="160" class="ax">0</text><text x="170" y="160" class="ax">100</text></svg><div class="val"><b>${val ?? "–"}</b><span>ze 100</span></div>`;
+  let verdict, reco, pill;
+  const left = m.race?.left ?? 999, taper = m.race ? left >= 0 && left <= m.race.R.taper : false;
+  if (val == null) { verdict = "Chybí ranní data"; reco = "Nahraj wellness data (HRV, spánek, klidový tep) a připravenost se spočítá. Zatím se řiď formou TSB."; pill = "info"; }
+  else if (taper) { verdict = left === 0 ? "Den závodu" : "Ladění na závod"; reco = left === 0 ? "Snídaně 3 h před startem, rozcvička 15 min, plán tempa podle trenéra. Hodně štěstí!" : `Zbývá ${left} dní. Krátké tréninky s pár úseky v závodním tempu, objem snížený o 40–60 %, hodně spánku.`; pill = "info"; }
+  else if (val >= 75 && d.tsb > -25) { verdict = "Zelená pro klíčový trénink"; reco = "Tělo je odpočaté. Dnes je ideální den na kvalitu: kolo 5×5 min v Z4–5, tempo běh 3×10 min, nebo CSS série v bazénu."; pill = "good"; }
+  else if (val >= 55) { verdict = "Mírná zátěž"; reco = "Drž to aerobně: 60–90 min v Z2, technika plavání nebo lehká posilovna. Intervaly odlož na zítřek."; pill = "warn"; }
+  else { verdict = "Den na regeneraci"; reco = "Volno nebo 30–40 min velmi lehce v Z1 a mobilita. Spánek 8+ h, dost sacharidů a tekutin."; pill = "bad"; }
+  $("#verdict").textContent = verdict; $("#reco").textContent = reco;
+  $("#readyPill").innerHTML = `<span class="pill ${pill}">${val == null ? "bez dat" : val >= 75 ? "připraven" : val >= 55 ? "opatrně" : "regenerace"}</span>`;
+  const f = (lab, v, unit, pct, c) => `<div class="factor"><small>${lab}</small><b>${v ?? "–"}${v != null && unit ? `<span class="note"> ${unit}</span>` : ""}</b><div class="bar"><i style="width:${clamp(pct ?? 0, 0, 100)}%;background:var(--${c})"></i></div></div>`;
+  const hrvPct = w?.hrv && d.hrvBase ? 50 + 25 * (w.hrv - d.hrvBase) / d.hrvSd : null;
+  $("#factors").innerHTML =
+    f("HRV", w?.hrv, "ms", hrvPct, hrvPct == null ? "muted" : hrvPct >= 45 ? "good" : hrvPct >= 25 ? "warn" : "bad") +
+    f("Klidový tep", w?.rhr, "/min", w?.rhr && d.rhrBase ? 60 - 8 * (w.rhr - d.rhrBase) : null, w?.rhr && d.rhrBase && w.rhr > d.rhrBase + 3 ? "warn" : "good") +
+    f("Spánek", w?.sleep != null ? r1(w.sleep).toLocaleString("cs-CZ") : null, "h", w?.sleep ? (w.sleep - 5) / 3.5 * 100 : null, w?.sleep >= 7.5 ? "good" : w?.sleep >= 6.5 ? "warn" : "bad") +
+    f("Forma TSB", (d.tsb > 0 ? "+" : "") + r0(d.tsb), "", 50 + d.tsb * 1.6, d.tsb < -30 ? "bad" : d.tsb < -10 ? "warn" : "good");
+}
+
+function renderRace(m) {
+  const P = S.profile, pr = m.race;
+  if (!pr) { $("#raceName").textContent = "Nastav cílový závod"; $("#raceDate").textContent = "V sekci Data a nastavení"; $("#tminus").textContent = ""; $("#phases").innerHTML = ""; $("#legs").innerHTML = ""; $("#proj").textContent = ""; $("#phaseDates").innerHTML = ""; return; }
+  $("#raceName").textContent = P.raceName || pr.R.label;
+  $("#raceDate").textContent = parseISO(P.raceDate).toLocaleDateString("cs-CZ", { day: "numeric", month: "long", year: "numeric" }) + " · " + pr.R.label;
+  $("#tminus").innerHTML = pr.left >= 0 ? `T−${pr.left}<small>dní</small>` : `<small>proběhl</small>`;
+  const total = 112, s0 = addDays(P.raceDate, -total), seg = [["p-base", "Základ", total - pr.R.taper - 21 - 42], ["p-build", "Rozvoj", 42], ["p-peak", "Vrchol", 21], ["p-taper", "Ladění", pr.R.taper]];
+  const nowPct = clamp(diffDays(s0, TODAY) / total * 100, 0, 100);
+  const cur = (() => { let acc = 0; const t = diffDays(s0, TODAY); for (const s of seg) { acc += s[2]; if (t < acc) return s[1]; } return "Závod"; })();
+  $("#phases").innerHTML = seg.map(s => `<div class="${s[0]}" style="flex:${s[2]}">${s[1]}</div>`).join("") + (pr.left >= 0 && pr.left <= total ? `<span class="now" style="left:${nowPct}%" title="Dnes"></span>` : "");
+  $("#phaseDates").innerHTML = `<span>${fmtD(s0)}</span><span>Teď: <b>${esc(pr.left > total ? "před přípravou" : pr.left < 0 ? "po závodě" : cur)}</b></span><span>${fmtD(P.raceDate)}</span>`;
+  $("#legs").innerHTML = pr.R.legs.map((l, i) => `<div class="${["swim","bike","run"][i]}"><small>${l[0]}</small><b>${l[1]}</b></div>`).join("");
+  const pct = clamp(pr.ctl / (pr.R.ctl * 1.25) * 100, 0, 100), tp = pr.R.ctl / (pr.R.ctl * 1.25) * 100;
+  $("#proj").innerHTML = pr.left > 0 ? `Projekce kondice v den závodu: <b class="num">CTL ${r0(pr.ctl)}</b> / cíl ${pr.R.ctl} · forma <b class="num">${pr.tsb > 0 ? "+" : ""}${r0(pr.tsb)}</b><div class="meter"><i style="width:${pct}%"></i><u style="left:${tp}%"></u></div><span class="note">Při současných ${r0(pr.avg * 7)} TSS/týden a ladění ${pr.R.taper} dní před závodem.</span>` : "";
+}
+
+function renderKPIs(m) {
+  const d = m.days, L = m.last, prev = d[Math.max(0, d.length - 8)], last28 = d.slice(-28);
+  const delta = (v, unit, inv) => { const c = Math.abs(v) < 0.5 ? "flat" : (v > 0) !== !!inv ? "up" : "down"; return `<span class="${c}">${v > 0 ? "▲" : v < 0 ? "▼" : "•"} ${Math.abs(r1(v)).toLocaleString("cs-CZ")}${unit}</span>`; };
+  const tsbZone = L.tsb < -30 ? ["bad", "přetížení"] : L.tsb < -10 ? ["good", "trénink"] : L.tsb <= 5 ? ["info", "udržování"] : L.tsb <= 25 ? ["good", "čerstvý"] : ["warn", "ztráta"];
+  const hrv7 = L.hrv7, hb = L.hrvBase;
+  const tiles = [
+    ["Kondice CTL", r0(L.ctl), "", `${delta(L.ctl - prev.ctl, "")} za 7 dní`, spark(last28.map(x => x.ctl), "ctl")],
+    ["Únava ATL", r0(L.atl), "", `ACWR <b class="num">${m.acwr.toFixed(2).replace(".", ",")}</b>`, spark(last28.map(x => x.atl), "atl")],
+    ["Forma TSB", (L.tsb > 0 ? "+" : "") + r0(L.tsb), "", `<span class="pill ${tsbZone[0]}">${tsbZone[1]}</span>`, spark(last28.map(x => x.tsb), "tsb")],
+    ["Objem 7 dní", r1(m.hours7).toLocaleString("cs-CZ"), "h", `cíl ${S.profile.weeklyHours} h · ${delta(m.hours7 - m.hoursPrev7, " h")}`, spark(last28.map(x => x.mins), "accent")],
+    ["HRV 7 dní", hrv7 ? r0(hrv7) : "–", "ms", hb ? `normál ${r0(hb)} ± ${r0(L.hrvSd)} ms` : "bez dat", spark(last28.map(x => x.hrv7), "good")],
+    ["Klidový tep", m.rhr7 ? r0(m.rhr7) : "–", "/min", L.rhrBase && m.rhr7 ? `${delta(m.rhr7 - L.rhrBase, "", true)} proti normálu` : "bez dat", spark(last28.map(x => x.w?.rhr), "run")],
+    ["Spánek 7 dní", m.sleep7 ? r1(m.sleep7).toLocaleString("cs-CZ") : "–", "h", m.todayW?.sleepScore ? `skóre dnes ${m.todayW.sleepScore}` : "průměr za noc", spark(last28.map(x => x.w?.sleep), "strength")],
+    ["Body Battery", m.todayW?.bb ?? "–", "", m.todayW?.stress != null ? `stres ${m.todayW.stress}` : "ráno", spark(last28.map(x => x.w?.bb), "bike")]
+  ];
+  $("#kpis").innerHTML = tiles.map(t => `<div class="kpi"><div class="lab"><span>${t[0]}</span></div><div class="v">${t[1]}${t[2] ? `<small>${t[2]}</small>` : ""}</div><div class="d">${t[3]}</div>${t[4]}</div>`).join("");
+}
+
+function renderInsights(m) {
+  const lab = { bad: "riziko", warn: "pozor", info: "info", good: "v pořádku" };
+  $("#insights").innerHTML = m.insights.map((x, i) => `<div class="ins ${x.sev}"><div><h3>${esc(x.title)} <span class="pill ${x.sev}">${lab[x.sev]}</span></h3><p>${esc(x.text)}</p>${x.ask ? `<button class="ask" data-ask="${i}" type="button">Zeptat se trenéra →</button>` : ""}</div></div>`).join("") || `<p class="note">Zatím málo dat na postřehy.</p>`;
+}
+
+function drawPMC() {
+  const el = $("#pmc"), data = S.m.days.slice(-S.range), n = data.length;
+  const W = Math.max(300, el.clientWidth || 700), H = W < 500 ? 220 : 280, m = { l: 34, r: 10, t: 10, b: 24 };
+  const ys = data.flatMap(d => [d.ctl, d.atl, d.tsb]);
+  const tk = niceTicks(Math.min(0, ...ys), Math.max(...ys), 5), lo = tk[0], hi = tk[tk.length - 1];
+  const x = i => m.l + i * (W - m.l - m.r) / Math.max(1, n - 1), y = v => m.t + (hi - v) / (hi - lo) * (H - m.t - m.b);
+  const tmax = Math.max(1, ...data.map(d => d.tss)), bh = (H - m.t - m.b) * 0.32, bw = Math.max(1, (W - m.l - m.r) / n * 0.7);
+  let s = tk.map(v => `<line class="gridl" x1="${m.l}" x2="${W - m.r}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${m.l - 6}" y="${y(v) + 3.5}" text-anchor="end">${v}</text>`).join("");
+  s += `<line class="zero" x1="${m.l}" x2="${W - m.r}" y1="${y(0)}" y2="${y(0)}"/>`;
+  s += data.map((d, i) => d.tss ? `<rect class="tssbar" x="${(x(i) - bw / 2).toFixed(1)}" y="${(H - m.b - d.tss / tmax * bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${(d.tss / tmax * bh).toFixed(1)}"/>` : "").join("");
+  const tsbPts = data.map((d, i) => [x(i), y(d.tsb)]);
+  s += `<path class="a-tsb" d="${pathOf(tsbPts)}L${x(n - 1)},${y(0)}L${x(0)},${y(0)}Z"/>`;
+  s += `<path class="l-tsb" d="${pathOf(tsbPts)}"/><path class="l-atl" d="${pathOf(data.map((d, i) => [x(i), y(d.atl)]))}"/><path class="l-ctl" d="${pathOf(data.map((d, i) => [x(i), y(d.ctl)]))}"/>`;
+  const e = data[n - 1]; s += `<circle cx="${x(n - 1)}" cy="${y(e.ctl)}" r="4" fill="var(--ctl)"/><circle cx="${x(n - 1)}" cy="${y(e.atl)}" r="3" fill="var(--atl)"/><circle cx="${x(n - 1)}" cy="${y(e.tsb)}" r="3" fill="var(--tsb)"/>`;
+  const step = Math.max(7, Math.ceil(n / Math.max(2, Math.floor((W - m.l - m.r) / 62)) / 7) * 7);
+  for (let i = n - 1; i >= 0; i -= step) s += `<text class="ax" x="${x(i)}" y="${H - 6}" text-anchor="${i === n - 1 ? "end" : "middle"}">${fmtD(data[i].date)}</text>`;
+  s += `<line class="hoverline" y1="${m.t}" y2="${H - m.b}" style="display:none"/><rect x="${m.l}" y="0" width="${W - m.l - m.r}" height="${H}" fill="transparent"/>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Graf kondice, únavy a formy">${s}</svg>`;
+  attachHover(el, el.querySelector("svg"), n, x, i => { const d = data[i]; return `<b>${fmtDL(d.date)}</b><div><span>Kondice</span><span>${r0(d.ctl)}</span></div><div><span>Únava</span><span>${r0(d.atl)}</span></div><div><span>Forma</span><span>${r0(d.tsb)}</span></div><div><span>TSS</span><span>${r0(d.tss)}</span></div>`; }, m, H);
+}
+
+function drawWeekly() {
+  const el = $("#weekly"), wk = S.m.weeks, n = wk.length, goal = S.profile.weeklyHours;
+  const W = Math.max(300, el.clientWidth || 600), H = 230, m = { l: 30, r: 8, t: 10, b: 24 }, order = ["swim", "bike", "run", "strength", "other"];
+  const tot = wk.map(w => order.reduce((a, s) => a + w.h[s], 0)), tk = niceTicks(0, Math.max(goal * 1.15, ...tot), 4), hi = tk[tk.length - 1];
+  const bw = (W - m.l - m.r) / n, y = v => m.t + (hi - v) / hi * (H - m.t - m.b);
+  let s = tk.map(v => `<line class="gridl" x1="${m.l}" x2="${W - m.r}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${m.l - 6}" y="${y(v) + 3.5}" text-anchor="end">${v}</text>`).join("");
+  wk.forEach((w, i) => { let acc = 0; const x0 = m.l + i * bw + bw * 0.16, ww = bw * 0.68; for (const sp of order) { const v = w.h[sp]; if (v <= 0) continue; s += `<rect class="f-${sp}" x="${x0.toFixed(1)}" y="${y(acc + v).toFixed(1)}" width="${ww.toFixed(1)}" height="${(y(acc) - y(acc + v)).toFixed(1)}"${i === n - 1 ? ' opacity=".55"' : ""}/>`; acc += v; }
+    const ev = Math.max(1, Math.ceil(52 / bw)); if ((n - 1 - i) % ev === 0) s += `<text class="ax" x="${x0 + ww / 2}" y="${H - 6}" text-anchor="middle">${fmtD(w.start)}</text>`; });
+  s += `<line class="goal" x1="${m.l}" x2="${W - m.r}" y1="${y(goal)}" y2="${y(goal)}"/><line class="hoverline" y1="${m.t}" y2="${H - m.b}" style="display:none"/><rect x="${m.l}" y="0" width="${W - m.l - m.r}" height="${H}" fill="transparent"/>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Týdenní objem podle disciplín">${s}</svg>`;
+  attachHover(el, el.querySelector("svg"), n, i => m.l + i * bw + bw / 2, i => { const w = wk[i]; return `<b>Týden od ${fmtD(w.start)}${i === n - 1 ? " (probíhá)" : ""}</b>` + order.filter(s => w.h[s] > 0).map(s => `<div><span>${SPORTS[s]}</span><span>${r1(w.h[s]).toLocaleString("cs-CZ")} h</span></div>`).join("") + `<div><span>Celkem</span><span>${r1(tot[i]).toLocaleString("cs-CZ")} h</span></div><div><span>TSS</span><span>${r0(w.tss)}</span></div>`; }, m, H);
+}
+
+function renderZones(m) {
+  const z = m.zones, sum = z.reduce((a, b) => a + b, 0);
+  const bar = (arr, lbl) => { const t = arr.reduce((a, b) => a + b, 0) || 1; return arr.map((v, k) => v > 0 ? `<div class="z${k + 1}" style="flex:${v}" title="Z${k + 1}: ${r0(v / t * 100)} %">${lbl && v / t > 0.07 ? "Z" + (k + 1) : ""}</div>` : "").join(""); };
+  if (!sum) { $("#zTotal").innerHTML = ""; $("#zSports").innerHTML = `<p class="note">Žádná data o zónách za 28 dní.</p>`; $("#polar").innerHTML = ""; $("#polarPill").innerHTML = ""; return; }
+  $("#zTotal").innerHTML = bar(z, true);
+  $("#zSports").innerHTML = ["swim", "bike", "run", "strength"].filter(s => m.zonesSport[s]).map(s => { const a = m.zonesSport[s], t = a.reduce((x, y) => x + y, 0); return `<div class="zrow"><span class="sport"><i class="b-${s}"></i>${SPORTS[s]}</span><div class="zbar">${bar(a)}</div><span class="num note" style="text-align:right">${r0(t / 60)} h</span></div>`; }).join("");
+  const p = m.polar, ok = p.low >= 0.75 && p.mid <= 0.2;
+  $("#polarPill").innerHTML = `<span class="pill ${ok ? "good" : "warn"}">${ok ? "80/20 ✓" : "mimo 80/20"}</span>`;
+  $("#polar").innerHTML = `<div><small>Lehce Z1–2</small><b>${r0(p.low * 100)} %</b><span> cíl ~80 %</span></div><div><small>Šedá Z3</small><b>${r0(p.mid * 100)} %</b><span> cíl ≤ 10 %</span></div><div><small>Těžce Z4–5</small><b>${r0(p.high * 100)} %</b><span> cíl 10–20 %</span></div>`;
+}
+
+function drawRadar() {
+  const el = $("#radar"), now = S.m.radar, prev = S.m.radarPrev; if (!now) return;
+  const W = Math.min(Math.max(260, el.clientWidth || 360), 420), H = W * 0.92, cx = W / 2, cy = H / 2 + 4, R = Math.min(W, H) / 2 - 46, N = now.length;
+  const pt = (i, v) => { const a = -Math.PI / 2 + i * 2 * Math.PI / N; return [cx + Math.cos(a) * R * v / 100, cy + Math.sin(a) * R * v / 100]; };
+  let s = [25, 50, 75, 100].map(v => `<polygon class="r-ring" points="${now.map((_, i) => pt(i, v).map(c => c.toFixed(1)).join(",")).join(" ")}"/>`).join("");
+  s += now.map((_, i) => { const p = pt(i, 100); return `<line class="r-axis" x1="${cx}" y1="${cy}" x2="${p[0].toFixed(1)}" y2="${p[1].toFixed(1)}"/>`; }).join("");
+  if (prev) s += `<polygon class="r-prev" points="${prev.map((d, i) => pt(i, Math.max(2, d[1])).map(c => c.toFixed(1)).join(",")).join(" ")}"/>`;
+  s += `<polygon class="r-now" points="${now.map((d, i) => pt(i, Math.max(2, d[1])).map(c => c.toFixed(1)).join(",")).join(" ")}"/>`;
+  s += now.map((d, i) => { const p = pt(i, Math.max(2, d[1])); return `<circle class="r-dot" cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.2"/>`; }).join("");
+  s += now.map((d, i) => { const p = pt(i, 118), a = -Math.PI / 2 + i * 2 * Math.PI / N, c = Math.cos(a), anc = Math.abs(c) < 0.3 ? "middle" : c > 0 ? "start" : "end"; const dy = Math.sin(a) > 0.7 ? 10 : Math.sin(a) < -0.7 ? -6 : 0; return `<text class="r-lab" x="${p[0].toFixed(1)}" y="${(p[1] + dy).toFixed(1)}" text-anchor="${anc}">${d[0]}</text><text class="r-val" x="${p[0].toFixed(1)}" y="${(p[1] + dy + 13).toFixed(1)}" text-anchor="${anc}">${d[1]}</text>`; }).join("");
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="max-width:100%;height:auto;margin:0 auto" role="img" aria-label="Radar schopností">${s}</svg>`;
+  $("#rlist").innerHTML = now.map((d, i) => { const dv = prev ? d[1] - prev[i][1] : 0; return `<div><span>${d[0]}</span><b>${d[1]}</b><em class="${dv > 1 ? "up" : dv < -1 ? "down" : "flat"}">${dv > 0 ? "+" : ""}${dv}</em></div>`; }).join("") + `<div class="note" style="display:block;margin-top:4px">Plavání, kolo a běh jsou kondice disciplíny proti cíli pro ${RACE[S.profile.raceType].label}.</div>`;
+}
+
+function renderHeat(m) {
+  const days = m.days, end = TODAY, start = addDays(addDays(end, -dowMon(end)), -25 * 7), map = {};
+  for (const d of days) map[d.date] = d;
+  const vals = days.filter(d => d.tss > 0).map(d => d.tss).sort((a, b) => a - b), q = p => vals[Math.floor(p * (vals.length - 1))] || 1;
+  const th = [q(.25), q(.5), q(.75)];
+  let h = "", active = 0, streak = 0, total = 0;
+  for (let i = 0; i < 26 * 7; i++) { const ds = addDays(start, i); if (ds > end) { h += `<i style="visibility:hidden"></i>`; continue; } const d = map[ds], t = d?.tss || 0; const c = !t ? "" : t <= th[0] ? "h1" : t <= th[1] ? "h2" : t <= th[2] ? "h3" : "h4"; h += `<i class="${c}" title="${fmtD(ds)}: ${r0(t)} TSS"></i>`; }
+  $("#heat").innerHTML = h;
+  for (let i = days.length - 1; i >= 0; i--) { if (days[i].n > 0) streak++; else if (i < days.length - 1) break; }
+  const l28 = days.slice(-28); active = l28.filter(d => d.n > 0).length; total = l28.reduce((a, d) => a + d.n, 0);
+  const restDays = 28 - active;
+  $("#streak").textContent = streak > 1 ? `Série ${streak} dní v řadě` : "";
+  $("#consist").innerHTML = `<div><small>Aktivní dny</small><b>${active}/28</b></div><div><small>Tréninků</small><b>${total}</b><span> za 28 dní</span></div><div><small>Dny volna</small><b>${restDays}</b><span> ${restDays < 3 ? "málo!" : "za 28 dní"}</span></div>`;
+}
+
+function lineChart(el, opt) {
+  const data = opt.data, n = data.length; if (!n) { el.innerHTML = ""; return; }
+  const W = Math.max(280, el.clientWidth || 500), H = opt.H || 200, m = { l: 34, r: 10, t: 10, b: 22 };
+  const vals = []; for (const d of data) for (const s of opt.series) { const v = d[s.key]; if (Number.isFinite(v)) vals.push(v); } if (opt.band) for (const d of data) { if (Number.isFinite(d.lo)) vals.push(d.lo, d.hi); }
+  if (!vals.length) { el.innerHTML = `<p class="note">${opt.empty || "Bez dat"}</p>`; return; }
+  const tk = niceTicks(Math.min(...vals) - (opt.padLo || 0), Math.max(...vals), 4), lo = tk[0], hi = tk[tk.length - 1];
+  const x = i => m.l + i * (W - m.l - m.r) / Math.max(1, n - 1), y = v => m.t + (hi - v) / ((hi - lo) || 1) * (H - m.t - m.b);
+  let s = tk.map(v => `<line class="gridl" x1="${m.l}" x2="${W - m.r}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${m.l - 6}" y="${y(v) + 3.5}" text-anchor="end">${v}</text>`).join("");
+  if (opt.band) { const up = [], dn = []; data.forEach((d, i) => { if (Number.isFinite(d.lo)) { up.push([x(i), y(d.hi)]); dn.unshift([x(i), y(d.lo)]); } }); if (up.length > 1) s += `<path d="${pathOf(up.concat(dn))}Z" fill="var(--good)" opacity=".12"/>`; }
+  for (const se of opt.series) {
+    const pts = []; data.forEach((d, i) => { if (Number.isFinite(d[se.key])) pts.push([x(i), y(d[se.key]), i]); });
+    if (se.bars) { const bw = Math.max(2, (W - m.l - m.r) / n * 0.6); s += pts.map(p => `<rect x="${(p[0] - bw / 2).toFixed(1)}" y="${p[1].toFixed(1)}" width="${bw.toFixed(1)}" height="${(y(lo) - p[1]).toFixed(1)}" fill="var(--${se.color})" opacity="${se.op || .75}" rx="1"/>`).join(""); }
+    else if (se.dots) s += pts.map(p => `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2.4" fill="var(--${se.color})" opacity=".55"/>`).join("");
+    else if (pts.length > 1) { s += `<path d="${pathOf(pts)}" fill="none" stroke="var(--${se.color})" stroke-width="${se.w || 2}"/>`; const lp = pts[pts.length - 1]; s += `<circle cx="${lp[0]}" cy="${lp[1]}" r="3.5" fill="var(--${se.color})"/>`; }
+  }
+  if (opt.ref != null) s += `<line class="goal" x1="${m.l}" x2="${W - m.r}" y1="${y(opt.ref)}" y2="${y(opt.ref)}"/>`;
+  const step = Math.max(7, Math.ceil(n / Math.max(2, Math.floor((W - m.l - m.r) / 62)) / 7) * 7); for (let i = n - 1; i >= 0; i -= step) s += `<text class="ax" x="${x(i)}" y="${H - 5}" text-anchor="${i === n - 1 ? "end" : "middle"}">${fmtD(data[i].date)}</text>`;
+  if (opt.title) s += `<text class="ax" x="${m.l}" y="${m.t + 2}" dy="-1" style="font-family:var(--font-body);font-size:11px">${opt.title}</text>`;
+  s += `<line class="hoverline" y1="${m.t}" y2="${H - m.b}" style="display:none"/><rect x="${m.l}" y="0" width="${W - m.l - m.r}" height="${H}" fill="transparent"/>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${esc(opt.label)}">${s}</svg>`;
+  attachHover(el, el.querySelector("svg"), n, x, i => `<b>${fmtDL(data[i].date)}</b>` + opt.tip(data[i]), m, H);
+}
+function drawHRV() {
+  const L = S.m.last, data = S.m.days.slice(-90).map(d => ({ date: d.date, v: d.w?.hrv, avg: d.hrv7, lo: d.hrvBase ? d.hrvBase - d.hrvSd : NaN, hi: d.hrvBase ? d.hrvBase + d.hrvSd : NaN }));
+  lineChart($("#hrv"), { data, H: 230, label: "HRV trend", band: true, empty: "Žádná HRV data. Nahraj wellness CSV.", series: [{ key: "v", color: "good", dots: true }, { key: "avg", color: "good", w: 2.4 }], tip: d => `<div><span>HRV</span><span>${d.v ?? "–"} ms</span></div><div><span>7 dní</span><span>${d.avg ? r0(d.avg) : "–"} ms</span></div><div><span>Normál</span><span>${Number.isFinite(d.lo) ? r0(d.lo) + "–" + r0(d.hi) : "–"}</span></div>` });
+  const h7 = L.hrv7, hb = L.hrvBase;
+  $("#hrvPill").innerHTML = h7 && hb ? `<span class="pill ${h7 < hb - L.hrvSd ? "bad" : h7 < hb - 0.5 * L.hrvSd ? "warn" : "good"}">${h7 < hb - L.hrvSd ? "pod normálem" : h7 < hb - 0.5 * L.hrvSd ? "klesá" : "v normálu"}</span>` : "";
+}
+function drawRHR() {
+  const data = S.m.days.slice(-42).map(d => ({ date: d.date, v: d.w?.rhr }));
+  lineChart($("#rhr"), { data, H: 150, label: "Klidový tep", title: "Klidový tep (tepy/min)", ref: S.m.last.rhrBase ? r0(S.m.last.rhrBase) : null, empty: "Bez dat o klidovém tepu", series: [{ key: "v", color: "run", w: 2 }], tip: d => `<div><span>Klidový tep</span><span>${d.v ?? "–"}</span></div>` });
+}
+function drawSleep() {
+  const data = S.m.days.slice(-42).map(d => ({ date: d.date, v: d.w?.sleep }));
+  lineChart($("#sleep"), { data, H: 150, label: "Spánek", title: "Spánek (h), čárkovaně 8 h", ref: 8, padLo: 1, empty: "Bez dat o spánku", series: [{ key: "v", color: "strength", bars: true }], tip: d => `<div><span>Spánek</span><span>${d.v != null ? r1(d.v).toLocaleString("cs-CZ") + " h" : "–"}</span></div>` });
+}
+
+function renderActs() {
+  const list = [...S.acts].sort((a, b) => b.date.localeCompare(a.date)).slice(0, S.actsShown);
+  $("#acts").innerHTML = `<thead><tr><th>Datum</th><th>Sport</th><th>Trénink</th><th class="n">Čas</th><th class="n">Vzdálenost</th><th class="n">TSS</th><th class="n">Prům. tep</th></tr></thead><tbody>` +
+    list.map(a => `<tr><td>${fmtD(a.date)}</td><td><span class="sport"><i class="b-${a.sport}"></i>${SPORTS[a.sport] || a.sport}</span></td><td class="name">${esc(a.name)}</td><td class="n">${fmtDur(a.dur)}</td><td class="n">${a.dist ? (a.sport === "swim" ? r0(a.dist * 1000).toLocaleString("cs-CZ") + " m" : r1(a.dist).toLocaleString("cs-CZ") + " km") : "–"}</td><td class="n">${r0(a.tss || 0)}</td><td class="n">${a.hr || "–"}</td></tr>`).join("") + `</tbody>`;
+  $("#moreActs").hidden = S.acts.length <= S.actsShown;
+}
+
+/* ---------------- Coach (AI) ---------------- */
+const chat = [];
+let sample = null, ctl = null;
+const CHIPS = [
+  ["Denní briefing", "Udělej mi denní briefing: jak na tom dnes jsem a co přesně mám dnes odtrénovat (disciplína, délka, intenzita, struktura)."],
+  ["Plán na týden", "Naplánuj mi příští týden (Po–Ne) včetně posilovny. Dej to jako tabulku Den | Disciplína | Trénink | Délka | Intenzita a pod ni 3 klíčové body."],
+  ["Analýza 4 týdnů", "Analyzuj posledních 28 dní: co se zlepšilo, co je slabina, rizika a 3 konkrétní změny."],
+  ["Připravenost na závod", "Jsem připraven na svůj cílový závod? Odhadni stav, rizika a co udělat do závodu včetně ladění."],
+  ["Posilovna pro triatlon", "Navrhni silový trénink pro mě na tuto fázi sezóny: cviky, série, opakování, a kam ho dát v týdnu."],
+  ["Výživa na závod", "Dej mi strategii výživy a pitného režimu pro můj závod (sacharidy g/h, tekutiny, sodík) a jak ji natrénovat."]
+];
+function coachContext() {
+  const m = S.m, P = S.profile, L = m.last, w = m.todayW, f = v => v == null || !Number.isFinite(v) ? "?" : r1(v);
+  const lines = [];
+  lines.push(`ZDROJ DAT: ${S.source === "demo" ? "UKÁZKOVÁ DATA (ne skutečný sportovec) – zmiň to stručně" : "skutečná data sportovce z Garminu"}. Dnes je ${TODAY} (${fmtDL(TODAY)}).`);
+  lines.push(`PROFIL: ${P.name}; max tep ${P.maxHr}, klidový ${P.restHr}; FTP ${P.ftp} W; prahové tempo běhu ${P.runPace}/km; CSS ${P.css}/100 m; cíl ${P.weeklyHours} h/týden; posilovna ${P.strengthGoal}×/týden.`);
+  if (m.race) lines.push(`CÍLOVÝ ZÁVOD: ${P.raceName} (${m.race.R.label}) ${P.raceDate}, za ${m.race.left} dní. Cílová CTL ${m.race.R.ctl}, projekce CTL v den závodu ${f(m.race.ctl)}, TSB ${f(m.race.tsb)}. Ladění ${m.race.R.taper} dní.`);
+  lines.push(`ZÁTĚŽ DNES: CTL ${f(L.ctl)}, ATL ${f(L.atl)}, TSB ${f(L.tsb)}, ramp ${f(m.ramp)}/týden, ACWR ${m.acwr.toFixed(2)}, monotonie ${m.monotony.toFixed(2)}, objem 7 dní ${f(m.hours7)} h (předchozí týden ${f(m.hoursPrev7)} h).`);
+  lines.push(`REGENERACE: připravenost ${Number.isFinite(L.ready) ? r0(L.ready) : "?"} /100; HRV dnes ${w?.hrv ?? "?"} ms, 7d ${f(L.hrv7)}, normál ${f(L.hrvBase)}±${f(L.hrvSd)}; klidový tep dnes ${w?.rhr ?? "?"}, 7d ${f(m.rhr7)}, normál ${f(L.rhrBase)}; spánek dnes ${w?.sleep ?? "?"} h, 7d ${f(m.sleep7)} h; Body Battery ${w?.bb ?? "?"}; stres ${w?.stress ?? "?"}.`);
+  lines.push(`ZÓNY 28 DNÍ: Z1–2 ${r0(m.polar.low * 100)} %, Z3 ${r0(m.polar.mid * 100)} %, Z4–5 ${r0(m.polar.high * 100)} %.`);
+  if (m.radar) lines.push(`RADAR 0–100 (teď / před 28 dny): ` + m.radar.map((d, i) => `${d[0]} ${d[1]}/${m.radarPrev?.[i]?.[1] ?? "?"}`).join(", "));
+  lines.push(`TÝDNY (hodiny plav/kolo/běh/síla, TSS): ` + m.weeks.slice(-8).map(wk => `${wk.start}: ${r1(wk.h.swim)}/${r1(wk.h.bike)}/${r1(wk.h.run)}/${r1(wk.h.strength)}, ${r0(wk.tss)}`).join("; "));
+  lines.push(`POSTŘEHY KOKPITU: ` + m.insights.map(i => `[${i.sev}] ${i.title}: ${i.text}`).join(" | "));
+  const recent = S.acts.filter(a => diffDays(a.date, TODAY) < 14 && diffDays(a.date, TODAY) >= 0).sort((a, b) => a.date.localeCompare(b.date));
+  lines.push(`AKTIVITY 14 DNÍ: ` + (recent.map(a => `${a.date} ${a.sport} "${a.name}" ${r0(a.dur)} min, ${a.dist || 0} km, TSS ${r0(a.tss)}, tep ${a.hr || "?"}`).join("; ") || "žádné"));
+  return lines.join("\n");
+}
+function rulesTurn() {
+  return `Jsi můj osobní trenér – špičkový kouč triatlonu (zkušenosti s age-group i profi sportovci) a silového tréninku pro vytrvalce. Mluv česky, tykej, buď přímý, konkrétní a motivující.
+Zásady:
+- Opírej se o čísla z dat níže (CTL/ATL/TSB, HRV, spánek, zóny, radar). Když něco chybí, řekni to a nevymýšlej si.
+- Doporučení dávej konkrétně: délka, intenzita (zóna, % FTP, tempo/km, tempo/100 m), struktura intervalů.
+- Používej principy: polarizovaný trénink 80/20, progresivní přetížení max. +5–7 CTL/týden, odlehčovací týden po 2–3 týdnech, ladění před závodem, posilovna 2× týdně (mimo období ladění 1×).
+- Plány dávej jako markdown tabulku. Jinak krátké odstavce a odrážky. Max. ~250 slov, pokud nechci víc.
+- Při bolesti, nemoci nebo varovných příznacích doporuč lékaře/fyzioterapeuta.
+- Pro detaily můžeš použít nástroje get_activities, get_wellness a get_load.
+
+DATA Z KOKPITU:
+${coachContext()}`;
+}
+const coachTools = () => [
+  { name: "get_activities", description: "Vrátí seznam aktivit za posledních N dní (max 180), volitelně filtr podle sportu (swim, bike, run, strength). Pole: date, sport, name, dur (min), dist (km), tss, hr, z (minuty v zónách Z1–Z5).", inputSchema: { type: "object", properties: { days: { type: "number" }, sport: { type: "string" } }, required: ["days"] },
+    execute: i => { const d = clamp(Number(i.days) || 28, 1, 180); return S.acts.filter(a => diffDays(a.date, TODAY) < d && (!i.sport || a.sport === i.sport)).map(a => ({ date: a.date, sport: a.sport, name: a.name, dur: a.dur, dist: a.dist, tss: a.tss, hr: a.hr, z: a.z })); } },
+  { name: "get_wellness", description: "Vrátí denní wellness data za posledních N dní (max 180): hrv (ms), rhr, sleep (h), sleepScore, bb (Body Battery), stress, weight.", inputSchema: { type: "object", properties: { days: { type: "number" } }, required: ["days"] },
+    execute: i => { const d = clamp(Number(i.days) || 28, 1, 180); return S.well.filter(w => diffDays(w.date, TODAY) < d && diffDays(w.date, TODAY) >= 0); } },
+  { name: "get_load", description: "Vrátí denní tréninkovou zátěž za posledních N dní (max 180): tss, ctl, atl, tsb, readiness, minuty podle sportu.", inputSchema: { type: "object", properties: { days: { type: "number" } }, required: ["days"] },
+    execute: i => { const d = clamp(Number(i.days) || 42, 1, 180); return S.m.days.slice(-d).map(x => ({ date: x.date, tss: r0(x.tss), ctl: r1(x.ctl), atl: r1(x.atl), tsb: r1(x.tsb), ready: Number.isFinite(x.ready) ? r0(x.ready) : null, min: x.sportMin })); } }
+];
+function md(src) {
+  const lines = esc(src).split("\n"), out = []; let list = null, table = null;
+  const inline = s => s.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/`([^`]+)`/g, '<code class="mono">$1</code>').replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<i>$2</i>");
+  const flush = () => { if (list) { out.push(`<${list.t}>${list.items.map(i => `<li>${inline(i)}</li>`).join("")}</${list.t}>`); list = null; } if (table) { const [h, ...rows] = table; out.push(`<div class="tbl-scroll"><table><thead><tr>${h.map(c => `<th>${inline(c)}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${inline(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`); table = null; } };
+  for (const raw of lines) {
+    const l = raw.trim();
+    if (/^\|.*\|$/.test(l)) { if (/^\|[\s:|-]+\|$/.test(l)) continue; if (list) flush(); (table = table || []).push(l.slice(1, -1).split("|").map(c => c.trim())); continue; }
+    if (table) flush();
+    let mm;
+    if ((mm = l.match(/^[-*•]\s+(.*)/))) { if (list && list.t !== "ul") flush(); list = list || { t: "ul", items: [] }; list.items.push(mm[1]); continue; }
+    if ((mm = l.match(/^\d+[.)]\s+(.*)/))) { if (list && list.t !== "ol") flush(); list = list || { t: "ol", items: [] }; list.items.push(mm[1]); continue; }
+    flush();
+    if (!l) continue;
+    if ((mm = l.match(/^#{1,2}\s+(.*)/))) out.push(`<h3>${inline(mm[1])}</h3>`);
+    else if ((mm = l.match(/^#{3,6}\s+(.*)/))) out.push(`<h4>${inline(mm[1])}</h4>`);
+    else if (/^-{3,}$/.test(l)) continue;
+    else out.push(`<p>${inline(l)}</p>`);
+  }
+  flush(); return out.join("");
+}
+function addMsg(role, html) { const d = document.createElement("div"); d.className = "msg " + role; if (role === "me") d.textContent = html; else d.innerHTML = html; $("#msgs").appendChild(d); $("#msgs").scrollTop = $("#msgs").scrollHeight; return d; }
+const ERR = { not_granted: "Trenér nemá povolení. Povol ho v nabídce Oprávnění artefaktu.", rate_limited: "Moc dotazů najednou. Zkus to za chvíli.", prompt_too_large: "Moc dat na jeden dotaz. Zkus kratší otázku.", refused: "Na tohle trenér neodpoví. Zkus otázku přeformulovat.", session_expired: "Přihlášení vypršelo. Obnov stránku.", sampling_disabled: "AI je v tomhle zobrazení vypnutá." };
+async function ask(q) {
+  q = q.trim(); if (!q || !sample || ctl) return;
+  addMsg("me", q); chat.push({ role: "user", content: q });
+  const bub = addMsg("ai", `<span class="thinking">Trenér přemýšlí…</span>`);
+  ctl = new AbortController(); $("#sendBtn").hidden = true; $("#stopBtn").hidden = false;
+  const turns = chat.slice(-12); if (turns[0].role !== "user") turns.shift();
+  try {
+    const { text, truncated } = await sample([{ role: "user", content: rulesTurn() }, { role: "assistant", content: "Rozumím, mám tvoje data. Ptej se." }, ...turns], {
+      cache: false, signal: ctl.signal, tools: coachTools(),
+      onText: ({ text }) => { bub.innerHTML = md(text); $("#msgs").scrollTop = $("#msgs").scrollHeight; }
+    });
+    bub.innerHTML = md(text) + (truncated ? `<p class="note">Odpověď byla zkrácena. Požádej o pokračování.</p>` : "");
+    chat.push({ role: "assistant", content: text });
+  } catch (e) {
+    const keep = e?.text ? md(e.text) : "";
+    bub.innerHTML = keep + (e?.code === "cancelled" ? `<p class="note">Zastaveno.</p>` : `<p class="err">${esc(ERR[e?.code] || "Trenér teď neodpovídá. Zkus to znovu.")}</p>`);
+    if (e?.text) chat.push({ role: "assistant", content: e.text }); else chat.pop();
+  } finally { ctl = null; $("#sendBtn").hidden = false; $("#stopBtn").hidden = true; }
+}
+function initCoach() {
+  addMsg("ai", md(`Ahoj, jsem tvůj trenér. Vidím tvoji zátěž, HRV, spánek, zóny i plán na závod. Klikni na rychlou otázku dole nebo napiš vlastní.`));
+  $("#chips").innerHTML = CHIPS.map((c, i) => `<button type="button" data-chip="${i}">${c[0]}</button>`).join("");
+  $("#chips").addEventListener("click", e => { const b = e.target.closest("[data-chip]"); if (b) ask(CHIPS[+b.dataset.chip][1]); });
+  $("#composer").addEventListener("submit", e => { e.preventDefault(); const v = $("#q").value; $("#q").value = ""; autoGrow(); ask(v); });
+  $("#q").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("#composer").requestSubmit(); } });
+  const autoGrow = () => { const t = $("#q"); t.style.height = "auto"; t.style.height = Math.min(140, t.scrollHeight) + "px"; };
+  $("#q").addEventListener("input", autoGrow);
+  $("#stopBtn").addEventListener("click", () => ctl?.abort());
+  $("#insights").addEventListener("click", e => { const b = e.target.closest("[data-ask]"); if (!b) return; const it = S.m.insights[+b.dataset.ask]; document.getElementById("trener").scrollIntoView({ behavior: "smooth", block: "start" }); ask(it.ask); });
+  window.claude?.use?.("sample").then(s => {
+    sample = s;
+    if (!s) { $("#chips").hidden = true; $("#composer").hidden = true; addMsg("ai", `<p class="coach-off">AI trenér funguje, když kokpit otevřeš v Claude (claude.ai nebo aplikace). Dashboard a výpočty běží i bez něj.</p>`); }
+  }).catch(() => {});
+  if (!window.claude?.use) { $("#chips").hidden = true; $("#composer").hidden = true; addMsg("ai", `<p class="coach-off">AI trenér funguje, když kokpit otevřeš v Claude (claude.ai nebo aplikace).</p>`); }
+}
+
+/* ---------------- Import ---------------- */
+const norm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[®™]/g, "").trim();
+function parseCSV(text) {
+  text = text.replace(/^﻿/, ""); const first = text.split(/\r?\n/)[0] || "", delim = (first.match(/;/g) || []).length > (first.match(/,/g) || []).length ? ";" : ",";
+  const rows = []; let row = [], cur = "", q = false;
+  for (let i = 0; i < text.length; i++) { const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+    else if (c === '"') q = true; else if (c === delim) { row.push(cur); cur = ""; } else if (c === "\n" || c === "\r") { if (c === "\r" && text[i + 1] === "\n") i++; row.push(cur); rows.push(row); row = []; cur = ""; } else cur += c; }
+  if (cur || row.length) { row.push(cur); rows.push(row); }
+  return rows.filter(r => r.some(c => c.trim()));
+}
+function num(s) { if (s == null) return NaN; s = String(s).replace(/[\s ]/g, "").replace(/[^0-9.,-]/g, ""); if (!s || s === "--") return NaN; if (s.includes(",") && s.includes(".")) s = s.indexOf(",") < s.indexOf(".") ? s.replace(/,/g, "") : s.replace(/\./g, "").replace(",", "."); else if (s.includes(",")) s = /^-?\d{1,3}(,\d{3})+$/.test(s) ? s.replace(/,/g, "") : s.replace(",", "."); return parseFloat(s); }
+function pdate(s) { s = String(s || "").trim(); let m;
+  if ((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return `${m[1]}-${pad(+m[2])}-${pad(+m[3])}`;
+  if ((m = s.match(/^(\d{1,2})\.\s*(\d{1,2})\.\s*(\d{4})/))) return `${m[3]}-${pad(+m[2])}-${pad(+m[1])}`;
+  if ((m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/))) return `${m[3]}-${pad(+m[1])}-${pad(+m[2])}`;
+  const d = new Date(s); return isNaN(d) ? null : iso(d); }
+function pdurMin(s, h) { s = String(s || "").trim(); if (!s || s === "--") return NaN; if (s.includes(":")) { const p = s.split(":").map(Number); return p.length === 3 ? p[0] * 60 + p[1] + p[2] / 60 : p[0] + p[1] / 60; } const v = num(s); if (!Number.isFinite(v)) return NaN; return /sec|secs|moving_time|elapsed|_time|cas/.test(h) || v > 600 ? v / 60 : v; }
+function sportOf(t) { t = norm(t); if (/swim|plav|pool|bazen/.test(t)) return "swim"; if (/cycl|bike|ride|kolo|cyklo|spin|indoor_cycling|virtual/.test(t)) return "bike"; if (/run|beh|trail|treadmill/.test(t)) return "run"; if (/strength|sil|weight|posil|gym|hiit|crossfit|workout/.test(t)) return "strength"; return "other"; }
+function col(hs, ...keys) { for (const k of keys) { const i = hs.findIndex(h => h === k); if (i >= 0) return i; } for (const k of keys) { const i = hs.findIndex(h => h.includes(k)); if (i >= 0) return i; } return -1; }
+function importCSV(text) {
+  const rows = parseCSV(text); if (rows.length < 2) return { kind: "none" };
+  const hs = rows[0].map(norm), P = S.profile;
+  const cHrv = col(hs, "hrv", "hrvsdnn", "hrv (ms)", "overnight hrv"), cRhr = col(hs, "restinghr", "resting hr", "resting heart rate", "klidova"), cSleep = col(hs, "sleepsecs", "sleep time", "sleep", "spanek");
+  const cType = col(hs, "activity type", "typ aktivity", "type", "sport"), cDate = col(hs, "start_date_local", "date", "datum", "start time", "day");
+  if (cType < 0 && (cHrv >= 0 || cRhr >= 0 || cSleep >= 0)) {
+    const cSS = col(hs, "sleepscore", "sleep score"), cBB = col(hs, "body battery", "readiness", "bodybattery"), cSt = col(hs, "stress", "avgstress"), cW = col(hs, "weight", "hmotnost");
+    const out = [];
+    for (const r of rows.slice(1)) { const date = pdate(r[cDate >= 0 ? cDate : 0]); if (!date) continue; const w = { date };
+      if (cHrv >= 0) { const v = num(r[cHrv]); if (v > 0) w.hrv = r0(v); } if (cRhr >= 0) { const v = num(r[cRhr]); if (v > 0) w.rhr = r0(v); }
+      if (cSleep >= 0) { let v = /:/.test(r[cSleep]) ? pdurMin(r[cSleep], "") / 60 : num(r[cSleep]); if (v > 24) v = v / 3600; if (v > 0) w.sleep = r1(v); }
+      if (cSS >= 0) { const v = num(r[cSS]); if (v > 0) w.sleepScore = r0(v); } if (cBB >= 0) { const v = num(r[cBB]); if (v > 0) w.bb = r0(v); } if (cSt >= 0) { const v = num(r[cSt]); if (v > 0) w.stress = r0(v); } if (cW >= 0) { const v = num(r[cW]); if (v > 0) w.weight = r1(v); }
+      if (Object.keys(w).length > 1) out.push(w); }
+    return { kind: "wellness", items: out };
+  }
+  if (cType < 0 || cDate < 0) return { kind: "none" };
+  const cName = col(hs, "title", "name", "nazev"), cTime = col(hs, "moving_time", "moving time", "time", "cas", "elapsed time", "elapsed_time", "duration"), cDist = col(hs, "distance", "vzdalenost");
+  const cHr = col(hs, "avg hr", "average_heartrate", "avg_hr", "average heart rate", "prum. tf", "prumerna tf"), cTss = col(hs, "training stress score", "tss", "icu_training_load", "training load", "training_load"), cEl = col(hs, "total ascent", "total_elevation_gain", "elevation gain", "stoupani");
+  const cZ = [1, 2, 3, 4, 5].map(k => col(hs, `hr_z${k}_secs`, `z${k}_secs`, `hr zone ${k}`, `zone ${k}`));
+  const out = [];
+  for (const r of rows.slice(1)) {
+    const date = pdate(r[cDate]); if (!date) continue; const sport = sportOf(r[cType]); const dur = pdurMin(r[cTime], hs[cTime] || ""); if (!(dur > 0)) continue;
+    let dist = cDist >= 0 ? num(r[cDist]) : NaN; if (Number.isFinite(dist)) { if (sport === "swim" ? dist > 20 : dist > 400) dist = dist / 1000; } else dist = 0;
+    const hr = cHr >= 0 ? r0(num(r[cHr])) : NaN; let tss = cTss >= 0 ? num(r[cTss]) : NaN;
+    let z = cZ.every(i => i >= 0) ? cZ.map(i => r0((num(r[i]) || 0) / 60)) : null;
+    if (!(tss > 0)) { const lthr = P.maxHr * 0.9; const IF = hr > 0 ? clamp((hr - P.restHr) / (lthr - P.restHr), 0.4, 1.15) : sport === "strength" ? 0.6 : 0.7; tss = sport === "strength" ? dur * 0.6 : dur / 60 * IF * IF * 100; }
+    if (!z && hr > 0) { const pct = hr / P.maxHr; const zi = pct < .68 ? 0 : pct < .78 ? 1 : pct < .85 ? 2 : pct < .92 ? 3 : 4; const zz = [.1,.1,.1,.1,.1]; zz[zi] = .6; if (zi > 0) zz[zi - 1] += .1; z = zz.map(f => r0(f * dur / 1.1)); }
+    out.push({ id: date + "-" + sport + "-" + r0(dur) + "-" + r0(dist * 10), date, sport, name: (cName >= 0 && r[cName] ? String(r[cName]).slice(0, 80) : SPORTS[sport]), dur: r0(dur), dist: r1(dist), tss: r0(tss), hr: Number.isFinite(hr) && hr > 0 ? hr : null, elev: cEl >= 0 ? r0(num(r[cEl]) || 0) : 0, z });
+  }
+  return { kind: "activities", items: out };
+}
+async function handleFiles(files) {
+  const st = $("#importStatus"); st.textContent = "Načítám…"; let na = 0, nw = 0, bad = [];
+  const acts = new Map(S.userActs.map(a => [a.id, a])), well = new Map(S.userWell.map(w => [w.date, w]));
+  for (const f of files) { try { const r = importCSV(await f.text()); if (r.kind === "activities") { r.items.forEach(a => acts.set(a.id, a)); na += r.items.length; } else if (r.kind === "wellness") { r.items.forEach(w => well.set(w.date, { ...(well.get(w.date) || {}), ...w })); nw += r.items.length; } else bad.push(f.name); } catch (e) { bad.push(f.name); } }
+  if (!na && !nw) { st.innerHTML = `<span class="down">Soubor jsem nepoznal${bad.length ? " (" + esc(bad.join(", ")) + ")" : ""}. Potřebuju CSV s aktivitami (sloupce Typ aktivity, Datum, Čas) nebo wellness (HRV, klidový tep, spánek).</span>`; return; }
+  S.userActs = [...acts.values()]; S.userWell = [...well.values()];
+  st.textContent = `Načteno ${na} aktivit a ${nw} dní wellness. Ukládám…`;
+  applyData(); const saved = await saveData();
+  st.innerHTML = `<span class="up">Hotovo: ${na} aktivit, ${nw} dní wellness.</span> ${saved ? "Uloženo, uvidíš je i na jiném zařízení." : "Uloženo jen v tomto prohlížeči."}${bad.length ? ` Nepoznal jsem: ${esc(bad.join(", "))}.` : ""}`;
+}
+function byMonth(items) { const g = {}; for (const x of items) (g[x.date.slice(0, 7)] = g[x.date.slice(0, 7)] || []).push(x); return g; }
+async function saveData() {
+  if (!S.db) { try { localStorage.setItem("tk_acts", JSON.stringify(S.userActs)); localStorage.setItem("tk_well", JSON.stringify(S.userWell)); } catch (e) {} return false; }
+  try { for (const [coll, items] of [["activities", S.userActs], ["wellness", S.userWell]]) { const g = byMonth(items); for (const k of Object.keys(g)) await S.db.collection(coll).doc(k).set({ month: k, items: g[k] }); } return true; }
+  catch (e) { $("#importStatus").textContent = "Uložení selhalo: " + (e?.message || "neznámá chyba"); return false; }
+}
+function applyData() {
+  if (S.userActs.length) { S.acts = S.userActs; S.well = S.userWell; S.source = "user"; }
+  else { const d = DEMO || (DEMO = genDemo()); S.acts = d.acts; S.well = S.userWell.length ? S.userWell : d.well; S.source = S.userWell.length ? "user" : "demo"; if (S.userWell.length) S.acts = d.acts; }
+  render();
+}
+let DEMO = null;
+
+/* ---------------- Profile ---------------- */
+function fillProfileForm() { const f = $("#profForm"); if (f.dataset.dirty) return; for (const k in DEFAULT_PROFILE) { const el = f.elements[k]; if (el) el.value = S.profile[k] ?? ""; } }
+function initProfile() {
+  const f = $("#profForm"); f.addEventListener("input", () => { f.dataset.dirty = "1"; });
+  f.addEventListener("submit", async e => { e.preventDefault(); const p = { ...S.profile };
+    for (const k in DEFAULT_PROFILE) { const el = f.elements[k]; if (!el) continue; p[k] = typeof DEFAULT_PROFILE[k] === "number" ? (Number(el.value) || DEFAULT_PROFILE[k]) : el.value; }
+    S.profile = p; delete f.dataset.dirty; render();
+    if (S.db) { try { await S.db.doc("athlete/profile").set(p); $("#profStatus").textContent = "Profil uložen."; } catch (e) { $("#profStatus").textContent = "Uložení selhalo, zkus to znovu."; } }
+    else { try { localStorage.setItem("tk_profile", JSON.stringify(p)); } catch (e) {} $("#profStatus").textContent = "Profil uložen v tomto prohlížeči."; } });
+  $("#clearWrap").addEventListener("click", async e => {
+    const w = $("#clearWrap");
+    if (e.target.id === "clearBtn") { w.innerHTML = `<span class="note">Opravdu smazat všechny nahrané aktivity a wellness?</span><button class="btn danger" id="clearYes" type="button">Ano, smazat</button><button class="btn" id="clearNo" type="button">Zrušit</button>`; return; }
+    if (e.target.id === "clearNo") { w.innerHTML = `<button class="btn danger" id="clearBtn" type="button">Smazat nahraná data</button>`; return; }
+    if (e.target.id === "clearYes") {
+      const months = [["activities", byMonth(S.userActs)], ["wellness", byMonth(S.userWell)]];
+      S.userActs = []; S.userWell = [];
+      if (S.db) { try { for (const [c, g] of months) for (const k of Object.keys(g)) await S.db.collection(c).doc(k).delete(); } catch (err) {} }
+      try { localStorage.removeItem("tk_acts"); localStorage.removeItem("tk_well"); } catch (err) {}
+      w.innerHTML = `<button class="btn danger" id="clearBtn" type="button">Smazat nahraná data</button>`; $("#profStatus").textContent = "Data smazána."; applyData();
+    }
+  });
+}
+
+/* ---------------- Boot ---------------- */
+function initUI() {
+  $("#rangeSeg").querySelectorAll("button").forEach(b => b.classList.toggle("on", +b.dataset.r === S.range));
+  $("#rangeSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; S.range = +b.dataset.r; try { localStorage.setItem("tk_range", S.range); } catch (err) {} $("#rangeSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); drawPMC(); });
+  $("#moreActs").addEventListener("click", () => { S.actsShown += 20; renderActs(); });
+  $("#fileIn").addEventListener("change", e => { if (e.target.files.length) handleFiles([...e.target.files]); e.target.value = ""; });
+  const dz = $("#drop");
+  dz.addEventListener("dragover", e => { e.preventDefault(); dz.classList.add("over"); });
+  dz.addEventListener("dragleave", () => dz.classList.remove("over"));
+  dz.addEventListener("drop", e => { e.preventDefault(); dz.classList.remove("over"); const f = [...(e.dataTransfer?.files || [])]; if (f.length) handleFiles(f); });
+  const nav = [...document.querySelectorAll(".nav a")];
+  const io = "IntersectionObserver" in window ? new IntersectionObserver(es => { for (const en of es) if (en.isIntersecting) nav.forEach(a => a.classList.toggle("on", a.getAttribute("href") === "#" + en.target.id)); }, { rootMargin: "-40% 0px -55% 0px" }) : null;
+  if (io) ["dnes", "zatez", "profil", "regenerace", "data", "trener"].forEach(id => { const el = document.getElementById(id); if (el) io.observe(el); });
+  let rt; const ro = new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { if (S.m) { drawPMC(); drawWeekly(); drawRadar(); drawHRV(); drawRHR(); drawSleep(); } }, 120); });
+  ro.observe($("#dash"));
+}
+function loadLocal() { try { const p = JSON.parse(localStorage.getItem("tk_profile") || "null"); if (p) S.profile = { ...DEFAULT_PROFILE, ...p }; S.userActs = JSON.parse(localStorage.getItem("tk_acts") || "[]"); S.userWell = JSON.parse(localStorage.getItem("tk_well") || "[]"); } catch (e) {} }
+async function initDB() {
+  if (!window.claude?.use) return;
+  const db = await window.claude.use("db").catch(() => null); if (!db) return;
+  S.db = db; let got = { a: false, w: false };
+  const timer = setTimeout(() => { if (!got.a) $("#importStatus").textContent = "Uložená data se zatím nepodařilo načíst. Zobrazuji, co je k dispozici."; }, 10000);
+  db.doc("athlete/profile").onSnapshot(s => { if (s.exists) { S.profile = { ...DEFAULT_PROFILE, ...s.data() }; applyData(); } }, () => {});
+  const sub = (c, key, setter) => db.collection(c).onSnapshot(snap => { const items = []; snap.docs.forEach(d => { const b = d.data(); if (Array.isArray(b?.items)) items.push(...b.items); }); setter(items); if (!snap.metadata.fromCache) { got[key] = true; if (got.a) { clearTimeout(timer); if (/nepodařilo/.test($("#importStatus").textContent)) $("#importStatus").textContent = ""; } } applyData(); }, () => { clearTimeout(timer); });
+  sub("activities", "a", it => { S.userActs = it.filter(a => a && a.date && a.sport); });
+  sub("wellness", "w", it => { S.userWell = it.filter(w => w && w.date); });
+}
+
+loadLocal(); initUI(); initProfile(); initCoach(); applyData(); initDB();
+})();
+</script>
