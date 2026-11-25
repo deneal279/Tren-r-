@@ -41,10 +41,20 @@ def convert_activity(x):
         zz[4] += sum(z[5:]) / 60
         z = [round(v) for v in zz]
     tss = x.get("icu_training_load")
-    return {"id": "icu-" + str(x["id"]), "date": x["start_date_local"][:10], "sport": sport,
-            "name": (x.get("name") or x.get("type") or "Trénink")[:80], "type": x.get("type"),
-            "dur": dur, "dist": dist, "tss": round(tss if tss is not None else dur * 0.5),
-            "hr": x.get("average_heartrate"), "elev": round(x.get("total_elevation_gain") or 0), "z": z}
+    a = {"id": "icu-" + str(x["id"]), "date": x["start_date_local"][:10], "sport": sport,
+         "name": (x.get("name") or x.get("type") or "Trénink")[:80], "type": x.get("type"),
+         "dur": dur, "dist": dist, "tss": round(tss if tss is not None else dur * 0.5),
+         "hr": x.get("average_heartrate"), "maxHr": x.get("max_heartrate"),
+         "elev": round(x.get("total_elevation_gain") or 0), "z": z}
+    extra = {"w": x.get("icu_average_watts"), "np": x.get("icu_weighted_avg_watts"),
+             "ef": x.get("icu_efficiency_factor"), "dec": x.get("decoupling"),
+             "spd": x.get("average_speed"), "cad": x.get("average_cadence"),
+             "kcal": x.get("calories"), "rpe": x.get("icu_rpe") or x.get("perceived_exertion"),
+             "eftp": x.get("icu_rolling_ftp"), "trainer": x.get("trainer")}
+    for k, v in extra.items():
+        if v is not None and v is not False:
+            a[k] = round(v, 3) if isinstance(v, float) else v
+    return a
 
 
 def convert_wellness(w):
@@ -56,6 +66,9 @@ def convert_wellness(w):
     if w.get("weight"): e["weight"] = w["weight"]
     if w.get("steps"): e["steps"] = w["steps"]
     if w.get("stress"): e["stress"] = round(w["stress"])
+    if w.get("vo2max"): e["vo2max"] = w["vo2max"]
+    if w.get("avgSleepingHR"): e["sleepHr"] = w["avgSleepingHR"]
+    if w.get("respiration"): e["resp"] = w["respiration"]
     return e if len(e) > 1 else None
 
 
