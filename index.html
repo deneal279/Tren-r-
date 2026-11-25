@@ -267,6 +267,19 @@ td.name{white-space:normal;min-width:160px}
 .status{font-size:13px;margin-top:8px;min-height:20px}
 .confirm{display:inline-flex;gap:8px;align-items:center;flex-wrap:wrap}
 .foot{grid-column:span 12;color:var(--muted);font-size:12px;margin-top:6px}
+/* Tooltips */
+[data-tip]:not([data-tip=""]){cursor:help;text-decoration:underline dotted color-mix(in srgb,var(--muted) 70%,transparent);text-decoration-thickness:1px;text-underline-offset:3px}
+.zbar [data-tip],.pill[data-tip]{text-decoration:none}
+svg text[data-tip]{text-decoration:none}
+#gtip{position:fixed;z-index:60;max-width:min(340px,calc(100vw - 24px));background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:12.5px;line-height:1.5;box-shadow:0 10px 28px rgb(0 0 0 / .18);pointer-events:none}
+#gtip b.t{display:block;font-family:var(--font-display);font-size:17px;font-weight:600;margin-bottom:3px}
+#gtip p{margin:0 0 6px;color:var(--ink)}
+#gtip .dir{display:flex;gap:6px;align-items:baseline;font-weight:600;margin-top:2px}
+#gtip .dir.up{color:var(--good)}#gtip .dir.down{color:var(--good)}#gtip .dir.mid{color:var(--info)}
+#gtip .rng{color:var(--muted);margin-top:4px}
+#gtip .now{margin-top:7px;padding-top:7px;border-top:1px solid var(--line);font-family:var(--font-mono);font-size:12px}
+#gtip .now.good{color:var(--good)}#gtip .now.warn{color:var(--warn)}#gtip .now.bad{color:var(--bad)}
+.tiphint{font-size:12px;color:var(--muted)}
 /* Plan & workouts */
 .plan-card{container-type:inline-size}
 .plan-sum{display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin-bottom:12px;font-size:13px}
@@ -352,10 +365,10 @@ td.name{white-space:normal;min-width:160px}
       <a class="btn primary" href="#data">Nahrát moje data</a>
     </div>
 
-    <div class="section-title" id="dnes"><h2>Dnes</h2><span class="note" id="todayDate"></span></div>
+    <div class="section-title" id="dnes"><h2>Dnes</h2><span class="note" id="todayDate"></span><span class="tiphint">Tečkovaně podtržené hodnoty mají vysvětlivku: najeď na ně myší nebo na ně klepni.</span></div>
 
     <section class="card c7">
-      <div class="card-head"><div><h2>Připravenost</h2><div class="sub">Kombinace HRV, klidového tepu, spánku a formy (TSB)</div></div><span id="readyPill"></span></div>
+      <div class="card-head"><div><h2 data-tip="ready">Připravenost</h2><div class="sub">Kombinace HRV, klidového tepu, spánku a formy (TSB)</div></div><span id="readyPill"></span></div>
       <div class="today">
         <div class="gauge" id="gauge"></div>
         <div>
@@ -378,11 +391,11 @@ td.name{white-space:normal;min-width:160px}
     </section>
 
     <section class="card c8">
-      <div class="card-head"><div><h2>Dnešní trénink</h2><div class="sub" id="woSub">Podle plánu na týden, upravený podle tvé připravenosti</div></div><button class="btn" id="woAsk" type="button">Upravit s trenérem</button></div>
+      <div class="card-head"><div><h2 data-tip="todayWo">Dnešní trénink</h2><div class="sub" id="woSub">Podle plánu na týden, upravený podle tvé připravenosti</div></div><button class="btn" id="woAsk" type="button">Upravit s trenérem</button></div>
       <div id="todayWo"></div>
     </section>
     <section class="card c4">
-      <div class="card-head"><div><h2>Výživa dnes</h2><div class="sub" id="nutriSub"></div></div></div>
+      <div class="card-head"><div><h2 data-tip="nutri">Výživa dnes</h2><div class="sub" id="nutriSub"></div></div></div>
       <div class="nutri" id="nutri"></div>
     </section>
 
@@ -396,7 +409,7 @@ td.name{white-space:normal;min-width:160px}
     <div class="section-title" id="plan"><h2>Plán na týden</h2><span class="note" id="planRange"></span></div>
     <section class="card c12 plan-card">
       <div class="card-head">
-        <div><h2 id="planTitle">Tento týden</h2><div class="sub" id="planSub"></div></div>
+        <div><h2 id="planTitle" data-tip="plan">Tento týden</h2><div class="sub" id="planSub"></div></div>
         <div class="row">
           <div class="seg" id="planSeg"><button data-m="auto" type="button">Automatický</button><button data-m="ai" type="button">Od trenéra</button></div>
           <button class="btn primary" id="aiPlanBtn" type="button">Vytvořit plán s AI trenérem</button>
@@ -411,21 +424,21 @@ td.name{white-space:normal;min-width:160px}
     <div class="section-title" id="zatez"><h2>Zátěž a forma</h2></div>
     <section class="card c12">
       <div class="card-head">
-        <div><h2>Kondice, únava, forma</h2><div class="sub">Performance Management Chart: CTL (42 dní), ATL (7 dní), TSB = forma. Šedé sloupce = denní TSS.</div></div>
+        <div><h2 data-tip="pmc">Kondice, únava, forma</h2><div class="sub">Performance Management Chart: CTL (42 dní), ATL (7 dní), TSB = forma. Šedé sloupce = denní TSS.</div></div>
         <div class="seg" id="rangeSeg"><button data-r="42">6 týdnů</button><button data-r="90" class="on">3 měsíce</button><button data-r="180">6 měsíců</button></div>
       </div>
       <div class="chart" id="pmc"></div>
-      <div class="legend" style="margin-top:8px"><span><i style="background:var(--ctl)"></i>Kondice CTL</span><span><i style="background:var(--atl)"></i>Únava ATL</span><span><i style="background:var(--tsb)"></i>Forma TSB</span><span><i class="sq" style="background:var(--muted);opacity:.35"></i>TSS</span></div>
+      <div class="legend" style="margin-top:8px"><span data-tip="ctl"><i style="background:var(--ctl)"></i>Kondice CTL</span><span data-tip="atl"><i style="background:var(--atl)"></i>Únava ATL</span><span data-tip="tsb"><i style="background:var(--tsb)"></i>Forma TSB</span><span data-tip="tss"><i class="sq" style="background:var(--muted);opacity:.35"></i>TSS</span></div>
     </section>
 
     <section class="card c7">
-      <div class="card-head"><div><h2>Týdenní objem</h2><div class="sub">Hodiny podle disciplíny, posledních 12 týdnů. Čárkovaně cíl.</div></div></div>
+      <div class="card-head"><div><h2 data-tip="weekly">Týdenní objem</h2><div class="sub">Hodiny podle disciplíny, posledních 12 týdnů. Čárkovaně cíl.</div></div></div>
       <div class="chart" id="weekly"></div>
       <div class="legend" style="margin-top:8px"><span><i class="sq b-swim"></i>Plavání</span><span><i class="sq b-bike"></i>Kolo</span><span><i class="sq b-run"></i>Běh</span><span><i class="sq b-strength"></i>Posilovna</span></div>
     </section>
 
     <section class="card c5">
-      <div class="card-head"><div><h2>Intenzita</h2><div class="sub">Čas v tepových zónách, posledních 28 dní</div></div><span id="polarPill"></span></div>
+      <div class="card-head"><div><h2 data-tip="zones">Intenzita</h2><div class="sub">Čas v tepových zónách, posledních 28 dní</div></div><span id="polarPill"></span></div>
       <div class="zbar" id="zTotal"></div>
       <div id="zSports"></div>
       <div class="polar" id="polar"></div>
@@ -433,12 +446,12 @@ td.name{white-space:normal;min-width:160px}
 
     <div class="section-title" id="profil"><h2>Profil sportovce</h2></div>
     <section class="card c7">
-      <div class="card-head"><div><h2>Radar schopností</h2><div class="sub">Skóre 0–100: posledních 28 dní (plně) proti předchozím 28 dnům (čárkovaně)</div></div></div>
+      <div class="card-head"><div><h2 data-tip="radar">Radar schopností</h2><div class="sub">Skóre 0–100: posledních 28 dní (plně) proti předchozím 28 dnům (čárkovaně)</div></div></div>
       <div class="radar-wrap"><div class="chart" id="radar"></div><div class="rlist" id="rlist"></div></div>
     </section>
 
     <section class="card c5">
-      <div class="card-head"><div><h2>Pravidelnost</h2><div class="sub">Denní TSS, posledních 26 týdnů</div></div><span class="note" id="streak"></span></div>
+      <div class="card-head"><div><h2 data-tip="heat">Pravidelnost</h2><div class="sub">Denní TSS, posledních 26 týdnů</div></div><span class="note" id="streak"></span></div>
       <div class="heat-scroll"><div class="heat" id="heat"></div></div>
       <div class="heat-legend">Méně <i style="background:var(--surface-2);border:1px solid var(--line)"></i><i class="h1" style="background:color-mix(in srgb,var(--accent) 25%,var(--surface))"></i><i style="background:color-mix(in srgb,var(--accent) 48%,var(--surface))"></i><i style="background:color-mix(in srgb,var(--accent) 72%,var(--surface))"></i><i style="background:var(--accent)"></i> Více</div>
       <div class="polar" id="consist" style="margin-top:14px"></div>
@@ -446,15 +459,15 @@ td.name{white-space:normal;min-width:160px}
 
     <div class="section-title" id="vykon"><h2>Výkonnost</h2></div>
     <section class="card c6">
-      <div class="card-head"><div><h2>Tvoje tréninkové zóny</h2><div class="sub" id="zoneSub"></div></div></div>
+      <div class="card-head"><div><h2 data-tip="zonesTable">Tvoje tréninkové zóny</h2><div class="sub" id="zoneSub"></div></div></div>
       <div class="tbl-scroll"><table class="ztable" id="zoneTable"></table></div>
     </section>
     <section class="card c6">
-      <div class="card-head"><div><h2>Osobní maxima</h2><div class="sub">Za celé období v kokpitu</div></div></div>
+      <div class="card-head"><div><h2 data-tip="records">Osobní maxima</h2><div class="sub">Za celé období v kokpitu</div></div></div>
       <div class="recs" id="recs"></div>
     </section>
     <section class="card c12">
-      <div class="card-head"><div><h2>Aerobní efektivita běhu</h2><div class="sub">Metry uběhnuté na jeden úder srdce (rychlost ÷ tep). Roste, když se zlepšuje aerobní kondice.</div></div><span id="effPill"></span></div>
+      <div class="card-head"><div><h2 data-tip="ef">Aerobní efektivita běhu</h2><div class="sub">Metry uběhnuté na jeden úder srdce (rychlost ÷ tep). Roste, když se zlepšuje aerobní kondice.</div></div><span id="effPill"></span></div>
       <div class="eff-head" id="effHead"></div>
       <div class="chart" id="effRun"></div>
       <p class="note" id="effBike"></p>
@@ -466,16 +479,16 @@ td.name{white-space:normal;min-width:160px}
 
     <div class="section-title" id="regenerace"><h2>Regenerace</h2></div>
     <section class="card c7">
-      <div class="card-head"><div><h2>Variabilita srdečního tepu</h2><div class="sub">HRV ráno (body), 7denní průměr (čára), tvé normální pásmo z 60 dní (podbarvení)</div></div><span id="hrvPill"></span></div>
+      <div class="card-head"><div><h2 data-tip="hrvChart">Variabilita srdečního tepu</h2><div class="sub">HRV ráno (body), 7denní průměr (čára), tvé normální pásmo z 60 dní (podbarvení)</div></div><span id="hrvPill"></span></div>
       <div class="chart" id="hrv"></div>
     </section>
     <section class="card c5">
-      <div class="card-head"><div><h2>Klidový tep a spánek</h2><div class="sub">Posledních 42 dní</div></div></div>
+      <div class="card-head"><div><h2 data-tip="rhr">Klidový tep a spánek</h2><div class="sub">Posledních 42 dní</div></div></div>
       <div class="chart" id="rhr"></div>
       <div class="chart" id="sleep" style="margin-top:10px"></div>
     </section>
     <section class="card c12">
-      <div class="card-head"><div><h2>Co ovlivňuje tvou regeneraci</h2><div class="sub">Ranní HRV a klidový tep podle spánku a předchozího dne, z tvých vlastních dat</div></div></div>
+      <div class="card-head"><div><h2 data-tip="factors">Co ovlivňuje tvou regeneraci</h2><div class="sub">Ranní HRV a klidový tep podle spánku a předchozího dne, z tvých vlastních dat</div></div></div>
       <div class="cmp" id="factorsCmp"></div>
     </section>
 
@@ -810,6 +823,7 @@ function render() {
   renderPlan(); renderTodayWorkout();
   drawPMC(); drawWeekly(); renderZones(m); drawRadar(); renderHeat(m); drawHRV(); drawRHR(); drawSleep(); renderActs();
   renderZoneTable(); renderRecords(); drawEfficiency(); renderMonthly(); renderRecoveryFactors();
+  decorateTips();
   fillProfileForm();
 }
 
@@ -829,7 +843,7 @@ function renderToday(m) {
   else { verdict = "Den na regeneraci"; reco = "Volno nebo 30–40 min velmi lehce v Z1 a mobilita. Spánek 8+ h, dost sacharidů a tekutin."; pill = "bad"; }
   $("#verdict").textContent = verdict; $("#reco").textContent = reco;
   $("#readyPill").innerHTML = `<span class="pill ${pill}">${val == null ? "bez dat" : val >= 75 ? "připraven" : val >= 55 ? "opatrně" : "regenerace"}</span>`;
-  const f = (lab, v, unit, pct, c) => `<div class="factor"><small>${lab}</small><b>${v ?? "–"}${v != null && unit ? `<span class="note"> ${unit}</span>` : ""}</b><div class="bar"><i style="width:${clamp(pct ?? 0, 0, 100)}%;background:var(--${c})"></i></div></div>`;
+  const f = (lab, v, unit, pct, c) => `<div class="factor"><small data-tip="${TK(lab)}">${lab}</small><b>${v ?? "–"}${v != null && unit ? `<span class="note"> ${unit}</span>` : ""}</b><div class="bar"><i style="width:${clamp(pct ?? 0, 0, 100)}%;background:var(--${c})"></i></div></div>`;
   const hrvPct = w?.hrv && d.hrvBase ? 50 + 25 * (w.hrv - d.hrvBase) / d.hrvSd : null;
   $("#factors").innerHTML =
     f("HRV", w?.hrv, "ms", hrvPct, hrvPct == null ? "muted" : hrvPct >= 45 ? "good" : hrvPct >= 25 ? "warn" : "bad") +
@@ -851,7 +865,7 @@ function renderRace(m) {
   $("#phaseDates").innerHTML = `<span>${fmtD(s0)}</span><span>Teď: <b>${esc(pr.left > total ? "před přípravou" : pr.left < 0 ? "po závodě" : cur)}</b></span><span>${fmtD(P.raceDate)}</span>`;
   $("#legs").innerHTML = pr.R.legs.map((l, i) => `<div class="${["swim","bike","run"][i]}"><small>${l[0]}</small><b>${l[1]}</b></div>`).join("");
   const pct = clamp(pr.ctl / (pr.R.ctl * 1.25) * 100, 0, 100), tp = pr.R.ctl / (pr.R.ctl * 1.25) * 100;
-  $("#proj").innerHTML = pr.left > 0 ? `Projekce kondice v den závodu: <b class="num">CTL ${r0(pr.ctl)}</b> / cíl ${pr.R.ctl} · forma <b class="num">${pr.tsb > 0 ? "+" : ""}${r0(pr.tsb)}</b><div class="meter"><i style="width:${pct}%"></i><u style="left:${tp}%"></u></div><span class="note">Při současných ${r0(pr.avg * 7)} TSS/týden a ladění ${pr.R.taper} dní před závodem.</span>` : "";
+  $("#proj").innerHTML = pr.left > 0 ? `<span data-tip="proj">Projekce kondice v den závodu</span>: <b class="num">CTL ${r0(pr.ctl)}</b> / cíl ${pr.R.ctl} · forma <b class="num">${pr.tsb > 0 ? "+" : ""}${r0(pr.tsb)}</b><div class="meter"><i style="width:${pct}%"></i><u style="left:${tp}%"></u></div><span class="note">Při současných ${r0(pr.avg * 7)} TSS/týden a ladění ${pr.R.taper} dní před závodem.</span>` : "";
 }
 
 function renderKPIs(m) {
@@ -871,12 +885,12 @@ function renderKPIs(m) {
       ? ["Body Battery", m.todayW?.bb ?? "–", "", m.todayW?.stress != null ? `stres ${m.todayW.stress}` : "ráno", spark(last28.map(x => x.w?.bb), "bike")]
       : ["Kroky 7 dní", r0(mean(last28.slice(-7).map(x => x.w?.steps).filter(Number.isFinite))).toLocaleString("cs-CZ"), "", "průměr za den", spark(last28.map(x => x.w?.steps), "bike")]
   ];
-  $("#kpis").innerHTML = tiles.map(t => `<div class="kpi"><div class="lab"><span>${t[0]}</span></div><div class="v">${t[1]}${t[2] ? `<small>${t[2]}</small>` : ""}</div><div class="d">${t[3]}</div>${t[4]}</div>`).join("");
+  $("#kpis").innerHTML = tiles.map(t => `<div class="kpi"><div class="lab"><span data-tip="${TK(t[0])}">${t[0]}</span></div><div class="v">${t[1]}${t[2] ? `<small>${t[2]}</small>` : ""}</div><div class="d">${t[3]}</div>${t[4]}</div>`).join("");
 }
 
 function renderInsights(m) {
   const lab = { bad: "riziko", warn: "pozor", info: "info", good: "v pořádku" };
-  $("#insights").innerHTML = m.insights.map((x, i) => `<div class="ins ${x.sev}"><div><h3>${esc(x.title)} <span class="pill ${x.sev}">${lab[x.sev]}</span></h3><p>${esc(x.text)}</p>${x.ask ? `<button class="ask" data-ask="${i}" type="button">Zeptat se trenéra →</button>` : ""}</div></div>`).join("") || `<p class="note">Zatím málo dat na postřehy.</p>`;
+  $("#insights").innerHTML = m.insights.map((x, i) => `<div class="ins ${x.sev}"><div><h3>${esc(x.title)} <span class="pill ${x.sev}" data-tip="sev">${lab[x.sev]}</span></h3><p>${esc(x.text)}</p>${x.ask ? `<button class="ask" data-ask="${i}" type="button">Zeptat se trenéra →</button>` : ""}</div></div>`).join("") || `<p class="note">Zatím málo dat na postřehy.</p>`;
 }
 
 function drawPMC() {
@@ -915,13 +929,13 @@ function drawWeekly() {
 
 function renderZones(m) {
   const z = m.zones, sum = z.reduce((a, b) => a + b, 0);
-  const bar = (arr, lbl) => { const t = arr.reduce((a, b) => a + b, 0) || 1; return arr.map((v, k) => v > 0 ? `<div class="z${k + 1}" style="flex:${v}" title="Z${k + 1}: ${r0(v / t * 100)} %">${lbl && v / t > 0.07 ? "Z" + (k + 1) : ""}</div>` : "").join(""); };
+  const bar = (arr, lbl) => { const t = arr.reduce((a, b) => a + b, 0) || 1; return arr.map((v, k) => v > 0 ? `<div class="z${k + 1}" style="flex:${v}" data-tip="z${k + 1}" data-extra="Tvůj podíl: ${r0(v / t * 100)} % času">${lbl && v / t > 0.07 ? "Z" + (k + 1) : ""}</div>` : "").join(""); };
   if (!sum) { $("#zTotal").innerHTML = ""; $("#zSports").innerHTML = `<p class="note">Žádná data o zónách za 28 dní.</p>`; $("#polar").innerHTML = ""; $("#polarPill").innerHTML = ""; return; }
   $("#zTotal").innerHTML = bar(z, true);
   $("#zSports").innerHTML = ["swim", "bike", "run", "strength"].filter(s => m.zonesSport[s]).map(s => { const a = m.zonesSport[s], t = a.reduce((x, y) => x + y, 0); return `<div class="zrow"><span class="sport"><i class="b-${s}"></i>${SPORTS[s]}</span><div class="zbar">${bar(a)}</div><span class="num note" style="text-align:right">${r0(t / 60)} h</span></div>`; }).join("");
   const p = m.polar, ok = p.low >= 0.75 && p.mid <= 0.2;
   $("#polarPill").innerHTML = `<span class="pill ${ok ? "good" : "warn"}">${ok ? "80/20 ✓" : "mimo 80/20"}</span>`;
-  $("#polar").innerHTML = `<div><small>Lehce Z1–2</small><b>${r0(p.low * 100)} %</b><span> cíl ~80 %</span></div><div><small>Šedá Z3</small><b>${r0(p.mid * 100)} %</b><span> cíl ≤ 10 %</span></div><div><small>Těžce Z4–5</small><b>${r0(p.high * 100)} %</b><span> cíl 10–20 %</span></div>`;
+  $("#polar").innerHTML = `<div><small data-tip="polarLow">Lehce Z1–2</small><b>${r0(p.low * 100)} %</b><span> cíl ~80 %</span></div><div><small data-tip="polarMid">Šedá Z3</small><b>${r0(p.mid * 100)} %</b><span> cíl ≤ 10 %</span></div><div><small data-tip="polarHigh">Těžce Z4–5</small><b>${r0(p.high * 100)} %</b><span> cíl 10–20 %</span></div>`;
 }
 
 function drawRadar() {
@@ -933,9 +947,9 @@ function drawRadar() {
   if (prev) s += `<polygon class="r-prev" points="${prev.map((d, i) => pt(i, Math.max(2, d[1])).map(c => c.toFixed(1)).join(",")).join(" ")}"/>`;
   s += `<polygon class="r-now" points="${now.map((d, i) => pt(i, Math.max(2, d[1])).map(c => c.toFixed(1)).join(",")).join(" ")}"/>`;
   s += now.map((d, i) => { const p = pt(i, Math.max(2, d[1])); return `<circle class="r-dot" cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.2"/>`; }).join("");
-  s += now.map((d, i) => { const p = pt(i, 118), a = -Math.PI / 2 + i * 2 * Math.PI / N, c = Math.cos(a), anc = Math.abs(c) < 0.3 ? "middle" : c > 0 ? "start" : "end"; const dy = Math.sin(a) > 0.7 ? 10 : Math.sin(a) < -0.7 ? -6 : 0; return `<text class="r-lab" x="${p[0].toFixed(1)}" y="${(p[1] + dy).toFixed(1)}" text-anchor="${anc}">${d[0]}</text><text class="r-val" x="${p[0].toFixed(1)}" y="${(p[1] + dy + 13).toFixed(1)}" text-anchor="${anc}">${d[1]}</text>`; }).join("");
+  s += now.map((d, i) => { const p = pt(i, 118), a = -Math.PI / 2 + i * 2 * Math.PI / N, c = Math.cos(a), anc = Math.abs(c) < 0.3 ? "middle" : c > 0 ? "start" : "end"; const dy = Math.sin(a) > 0.7 ? 10 : Math.sin(a) < -0.7 ? -6 : 0; return `<text class="r-lab" data-tip="${TK(d[0])}" x="${p[0].toFixed(1)}" y="${(p[1] + dy).toFixed(1)}" text-anchor="${anc}">${d[0]}</text><text class="r-val" x="${p[0].toFixed(1)}" y="${(p[1] + dy + 13).toFixed(1)}" text-anchor="${anc}">${d[1]}</text>`; }).join("");
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="max-width:100%;height:auto;margin:0 auto" role="img" aria-label="Radar schopností">${s}</svg>`;
-  $("#rlist").innerHTML = now.map((d, i) => { const dv = prev ? d[1] - prev[i][1] : 0; return `<div><span>${d[0]}</span><b>${d[1]}</b><em class="${dv > 1 ? "up" : dv < -1 ? "down" : "flat"}">${dv > 0 ? "+" : ""}${dv}</em></div>`; }).join("") + `<div class="note" style="display:block;margin-top:4px">Plavání, kolo a běh jsou kondice disciplíny proti cíli pro ${RACE[S.profile.raceType].label}.</div>`;
+  $("#rlist").innerHTML = now.map((d, i) => { const dv = prev ? d[1] - prev[i][1] : 0; return `<div><span data-tip="${TK(d[0])}">${d[0]}</span><b>${d[1]}</b><em class="${dv > 1 ? "up" : dv < -1 ? "down" : "flat"}">${dv > 0 ? "+" : ""}${dv}</em></div>`; }).join("") + `<div class="note" style="display:block;margin-top:4px">Plavání, kolo a běh jsou kondice disciplíny proti cíli pro ${RACE[S.profile.raceType].label}.</div>`;
 }
 
 function renderHeat(m) {
@@ -992,7 +1006,7 @@ function drawSleep() {
 
 function renderActs() {
   const list = [...S.acts].sort((a, b) => b.date.localeCompare(a.date)).slice(0, S.actsShown);
-  $("#acts").innerHTML = `<thead><tr><th>Datum</th><th>Sport</th><th>Trénink</th><th class="n">Čas</th><th class="n">Vzdálenost</th><th class="n">TSS</th><th class="n">Prům. tep</th></tr></thead><tbody>` +
+  $("#acts").innerHTML = `<thead><tr><th>Datum</th><th>Sport</th><th>Trénink</th><th class="n">Čas</th><th class="n">Vzdálenost</th><th class="n" data-tip="tss">TSS</th><th class="n">Prům. tep</th></tr></thead><tbody>` +
     list.map(a => `<tr><td>${fmtD(a.date)}</td><td><span class="sport"><i class="b-${a.sport}"></i>${SPORTS[a.sport] || a.sport}</span></td><td class="name">${esc(a.name)}</td><td class="n">${fmtDur(a.dur)}</td><td class="n">${a.dist ? (a.sport === "swim" ? r0(a.dist * 1000).toLocaleString("cs-CZ") + " m" : r1(a.dist).toLocaleString("cs-CZ") + " km") : "–"}</td><td class="n">${r0(a.tss || 0)}</td><td class="n">${a.hr || "–"}</td></tr>`).join("") + `</tbody>`;
   $("#moreActs").hidden = S.acts.length <= S.actsShown;
 }
@@ -1109,14 +1123,14 @@ function currentPlan() {
 const actsOn = date => S.acts.filter(a => a.date === date);
 const DOW = ["Po", "Út", "St", "Čt", "Pá", "So", "Ne"];
 function itemHTML(it, open) {
-  return `<details class="item ${esc(it.sport)}"${open ? " open" : ""}><summary>${esc(it.title)}${it.key ? ` <span class="pill info">klíčový</span>` : ""}<div class="meta">${it.mins ? fmtDur(it.mins) : ""}${it.tss ? ` · ~${it.tss} TSS` : ""}</div></summary>${it.steps?.length ? `<ol>${it.steps.map(s => `<li>${esc(s)}</li>`).join("")}</ol>` : ""}${it.fuel ? `<div class="fuel">${esc(it.fuel)}</div>` : ""}</details>`;
+  return `<details class="item ${esc(it.sport)}"${open ? " open" : ""}><summary>${esc(it.title)}${it.key ? ` <span class="pill info" data-tip="key">klíčový</span>` : ""}<div class="meta">${it.mins ? fmtDur(it.mins) : ""}${it.tss ? ` · ~${it.tss} TSS` : ""}</div></summary>${it.steps?.length ? `<ol>${it.steps.map(s => `<li>${esc(s)}</li>`).join("")}</ol>` : ""}${it.fuel ? `<div class="fuel">${esc(it.fuel)}</div>` : ""}</details>`;
 }
 function renderPlan() {
   const p = currentPlan(); S.plan = p;
   const sun = addDays(p.mon, 6);
   $("#planRange").textContent = `${fmtD(p.mon)}–${fmtD(sun)}`;
   $("#planTitle").textContent = p.source === "ai" ? "Plán od trenéra" : "Automatický plán";
-  $("#planSub").innerHTML = `Fáze <b>${PHASE[p.ph]}</b>${p.recovery ? " · <span class=\"pill info\">odlehčovací týden</span>" : ""}${S.profile.raceDate ? ` · do závodu ${Math.max(0, diffDays(TODAY, S.profile.raceDate))} dní` : ""}`;
+  $("#planSub").innerHTML = `Fáze <b data-tip="phase">${PHASE[p.ph]}</b>${p.recovery ? " · <span class=\"pill info\" data-tip=\"recovery\">odlehčovací týden</span>" : ""}${S.profile.raceDate ? ` · do závodu ${Math.max(0, diffDays(TODAY, S.profile.raceDate))} dní` : ""}`;
   const plannedH = p.days.reduce((a, d) => a + d.items.reduce((x, i) => x + (i.sport === "other" ? 0 : i.mins || 0), 0), 0) / 60;
   const plannedT = p.days.reduce((a, d) => a + d.items.reduce((x, i) => x + (i.tss || 0), 0), 0);
   const doneActs = S.acts.filter(a => a.date >= p.mon && a.date <= sun), doneH = doneActs.reduce((a, x) => a + x.dur, 0) / 60, doneT = doneActs.reduce((a, x) => a + (x.tss || 0), 0);
@@ -1166,11 +1180,12 @@ function renderTodayWorkout() {
     let adapt = "";
     if (it.key && rd != null && rd < 55) { const alt = wo(it.sport === "swim" ? "swim_tech" : it.sport === "run" ? "run_easy" : "bike_easy", 40, "base"); adapt = `<div class="adapt bad"><b>Připravenost ${r0(rd)}/100, tělo potřebuje odpočinek.</b> Místo tohohle tréninku dej: ${esc(alt.title)} 40 min (${esc(alt.steps[0])}). Klíčový trénink přesuň na zítřek nebo pozítří.</div>`; }
     else if (it.key && rd != null && rd < 70) adapt = `<div class="adapt">Připravenost ${r0(rd)}/100. Pokud se necítíš, zkrať hlavní sérii o třetinu a drž spodní hranice zón.</div>`;
-    html += `<div class="wo"><i class="b-${esc(it.sport)}"></i><div><h3>${esc(it.title)}${it.key ? ` <span class="pill info">klíčový</span>` : ""}</h3><div class="meta">${it.mins ? fmtDur(it.mins) : ""}${it.tss ? ` · ~${it.tss} TSS` : ""} · ${SPORTS[it.sport] || ""}</div>${it.steps?.length ? `<ol>${it.steps.map(s => `<li>${esc(s)}</li>`).join("")}</ol>` : ""}${it.fuel ? `<div class="fuel">${esc(it.fuel)}</div>` : ""}${adapt}</div></div>`;
+    html += `<div class="wo"><i class="b-${esc(it.sport)}"></i><div><h3>${esc(it.title)}${it.key ? ` <span class="pill info" data-tip="key">klíčový</span>` : ""}</h3><div class="meta">${it.mins ? fmtDur(it.mins) : ""}${it.tss ? ` · ~${it.tss} TSS` : ""} · ${SPORTS[it.sport] || ""}</div>${it.steps?.length ? `<ol>${it.steps.map(s => `<li>${esc(s)}</li>`).join("")}</ol>` : ""}${it.fuel ? `<div class="fuel">${esc(it.fuel)}</div>` : ""}${adapt}</div></div>`;
   }
   $("#todayWo").innerHTML = html;
   $("#woSub").textContent = `${p.source === "ai" ? "Z plánu od trenéra" : "Z automatického plánu"} · fáze ${PHASE[p.ph]}`;
   renderNutrition(items, acts);
+  decorateTips();
 }
 function renderNutrition(items, acts) {
   const P = S.profile, ww = [...S.well].reverse().find(w => w.weight)?.weight, kg = P.weight || ww || null;
@@ -1189,7 +1204,7 @@ function renderNutrition(items, acts) {
 /* ---------------- Performance ---------------- */
 function renderZoneTable() {
   const z = ZN, cols = [["Tep", ZS.hr], ...(z.run ? [["Běh", ZS.run]] : []), ...(z.swim ? [["Plavání", ZS.swim]] : []), ...(z.pw ? [["Kolo (výkon)", ZS.pw]] : [])];
-  $("#zoneTable").innerHTML = `<thead><tr><th>Zóna</th>${cols.map(c => `<th>${c[0]}</th>`).join("")}</tr></thead><tbody>${ZNAMES.map((n, k) => `<tr><td><span class="zdot z${k + 1}"></span>${n}</td>${cols.map(c => `<td class="num">${esc(c[1](k).replace(/^(pod|nad|pomaleji než|rychleji než) /, m0 => m0 === "pod " || m0 === "rychleji než " ? "< " : "> "))}</td>`).join("")}</tr>`).join("")}</tbody>`;
+  $("#zoneTable").innerHTML = `<thead><tr><th>Zóna</th>${cols.map(c => `<th data-tip="${TK(c[0])}">${c[0]}</th>`).join("")}</tr></thead><tbody>${ZNAMES.map((n, k) => `<tr><td><span class="zdot z${k + 1}"></span><span data-tip="z${k + 1}">${n}</span></td>${cols.map(c => `<td class="num">${esc(c[1](k).replace(/^(pod|nad|pomaleji než|rychleji než) /, m0 => m0 === "pod " || m0 === "rychleji než " ? "< " : "> "))}</td>`).join("")}</tr>`).join("")}</tbody>`;
   $("#zoneSub").textContent = `Z prahového tepu ${z.lthr}${z.auto ? " (odhad 90 % max. tepu, zadej přesný v profilu)" : ""}, prahového tempa a CSS z profilu`;
 }
 function renderRecords() {
@@ -1232,7 +1247,7 @@ function renderMonthly() {
   const keys = Object.keys(months).sort().slice(-6).reverse();
   const wm = k => S.well.filter(w => w.date.startsWith(k));
   const nm = k => parseISO(k + "-01").toLocaleDateString("cs-CZ", { month: "long", year: "numeric" });
-  $("#monthly").innerHTML = `<thead><tr><th>Měsíc</th><th class="n">Tréninky</th><th class="n">Hodiny</th><th class="n">Plavání</th><th class="n">Kolo</th><th class="n">Běh</th><th class="n">Posilovna</th><th class="n">TSS</th><th class="n">HRV</th><th class="n">Spánek</th></tr></thead><tbody>` +
+  $("#monthly").innerHTML = `<thead><tr><th>Měsíc</th><th class="n">Tréninky</th><th class="n">Hodiny</th><th class="n">Plavání</th><th class="n">Kolo</th><th class="n">Běh</th><th class="n">Posilovna</th><th class="n" data-tip="tss">TSS</th><th class="n" data-tip="hrv">HRV</th><th class="n" data-tip="sleep">Spánek</th></tr></thead><tbody>` +
     keys.map(k => { const m = months[k], w = wm(k), hrv = mean(w.map(x => x.hrv).filter(Number.isFinite)), sl = mean(w.map(x => x.sleep).filter(Number.isFinite)); return `<tr><td>${nm(k)}</td><td class="n">${m.n}</td><td class="n">${r1(m.h).toLocaleString("cs-CZ")}</td><td class="n">${m.swim ? r1(m.swim).toLocaleString("cs-CZ") + " km" : "–"}</td><td class="n">${m.bike ? r0(m.bike) + " km" : "–"}</td><td class="n">${m.run ? r1(m.run).toLocaleString("cs-CZ") + " km" : "–"}</td><td class="n">${m.str}×</td><td class="n">${r0(m.tss)}</td><td class="n">${hrv ? r0(hrv) + " ms" : "–"}</td><td class="n">${sl ? r1(sl).toLocaleString("cs-CZ") + " h" : "–"}</td></tr>`; }).join("") + `</tbody>`;
 }
 function renderRecoveryFactors() {
@@ -1458,6 +1473,101 @@ function initProfile() {
   });
 }
 
+/* ---------------- Tooltips (glossary) ---------------- */
+const LABEL_TIP = { "Kondice CTL": "ctl", "Únava ATL": "atl", "Forma TSB": "tsb", "Objem 7 dní": "hours7", "HRV 7 dní": "hrv", "HRV": "hrv", "Klidový tep": "rhr", "Spánek 7 dní": "sleep", "Spánek": "sleep", "Body Battery": "bb", "Kroky 7 dní": "steps",
+  "Plavání": "rSwim", "Kolo": "rBike", "Běh": "rRun", "Síla": "rStr", "Aerobní báze": "rBase", "Intenzita": "rInt", "Regenerace": "rReg", "Pravidelnost": "rCons", "Tep": "lthr", "Kolo (výkon)": "ftp" };
+const TK = l => LABEL_TIP[l] || "";
+const cz = v => r1(v).toLocaleString("cs-CZ");
+const GLOSS = {
+  ready: { t: "Připravenost", d: "Souhrnné skóre 0–100 z ranní HRV, klidového tepu, spánku a formy (TSB). Říká, kolik zátěže tělo dnes snese.", dir: "up", r: "75+ = klíčový trénink · 55–75 = mírná zátěž · pod 55 = regenerace",
+    now: m => { const v = m.last.ready ?? m.days[m.days.length - 2]?.ready; return v == null ? null : [`Dnes ${r0(v)}/100`, v >= 75 ? "good" : v >= 55 ? "warn" : "bad"]; } },
+  ctl: { t: "Kondice (CTL)", d: "Chronic Training Load: průměrná denní tréninková zátěž (TSS) za posledních ~6 týdnů. Ukazuje, kolik tréninku tělo dlouhodobě unese.", dir: "up", dirText: "Vyšší = lepší kondice. Roste pomalu, prudký růst je riskantní.", r: "Sprint ~45–50 · olympijský ~60–70 · 70.3 ~80 · Ironman ~100. Bezpečný růst +3 až +7 za týden.",
+    now: m => [`${r0(m.last.ctl)}, za týden ${m.ramp >= 0 ? "+" : ""}${cz(m.ramp)}`, m.ramp > 7 ? "bad" : m.ramp > 0.5 ? "good" : "warn"] },
+  atl: { t: "Únava (ATL)", d: "Acute Training Load: průměrná zátěž za posledních 7 dní. Po těžkých dnech rychle roste, při odpočinku rychle klesá.", dir: "mid", dirText: "Sama o sobě není dobrá ani špatná. Sleduj ji vůči kondici (forma TSB a ACWR).", r: "Únava výrazně nad kondicí = přetěžuješ se.",
+    now: m => [`${r0(m.last.atl)} (kondice ${r0(m.last.ctl)}, ACWR ${m.acwr.toFixed(2).replace(".", ",")})`, m.acwr > 1.5 ? "bad" : m.acwr > 1.3 ? "warn" : "good"] },
+  tsb: { t: "Forma (TSB)", d: "Training Stress Balance = kondice − únava. Záporná znamená, že jsi unavený z tréninku, kladná, že jsi odpočatý.", dir: "mid", dirText: "Ideál záleží na fázi: v tréninku mírně záporná, před závodem kladná.", r: "pod −30 riziko přetížení · −30 až −10 produktivní trénink · −10 až +5 udržování · +5 až +25 čerstvý, ideální na závod · nad +25 ztráta kondice",
+    now: m => { const v = m.last.tsb; return [`${v > 0 ? "+" : ""}${r0(v)}`, v < -30 ? "bad" : v > 25 ? "warn" : "good"]; } },
+  acwr: { t: "ACWR", d: "Poměr akutní a chronické zátěže (únava ÷ kondice). Říká, jestli poslední týden nebyl na tvé tělo moc.", dir: "mid", r: "0,8–1,3 bezpečné · 1,3–1,5 zvýšené riziko · nad 1,5 vysoké riziko zranění" },
+  tss: { t: "TSS – Training Stress Score", d: "Body zátěže tréninku podle délky a intenzity. 1 hodina na prahu = 100 TSS, hodina lehce v Z2 ≈ 40–50 TSS. U tebe se počítá z tepu (intervals.icu).", dir: "mid", dirText: "Víc TSS = větší tréninkový podnět, ale i větší únava.", r: "Lehký den do 50 · střední 50–100 · těžký 100–200 · závod 200+" },
+  hours7: { t: "Objem za 7 dní", d: "Součet hodin tréninku za posledních 7 dní, šipka ukazuje změnu proti předchozímu týdnu. Cíl je z profilu.", dir: "mid", dirText: "Postupný růst je dobrý, skoky jsou riskantní.", r: "Zvyšuj nejvýš o 10 % týdně, každý 3.–4. týden uber o 30–40 %.",
+    now: m => [`${cz(m.hours7)} h (předchozí týden ${cz(m.hoursPrev7)} h)`, m.hoursPrev7 > 1 && m.hours7 > m.hoursPrev7 * 1.3 ? "warn" : "good"] },
+  hrv: { t: "HRV – variabilita srdečního tepu", d: "Kolísání intervalů mezi údery srdce, měřené v noci v milisekundách. Odráží stav nervového systému a regenerace. Srovnávej jen sám se sebou, ne s ostatními.", dir: "up", dirText: "Vyšší než tvůj normál = dobře zregenerováno. Pokles pod normál několik dní za sebou = únava, stres, alkohol nebo začínající nemoc.", r: "Normál = tvůj průměr za 60 dní ± směrodatná odchylka.",
+    now: m => { const L = m.last; if (!L.hrv7 || !L.hrvBase) return null; return [`7 dní ${r0(L.hrv7)} ms, normál ${r0(L.hrvBase)} ± ${r0(L.hrvSd)} ms`, L.hrv7 < L.hrvBase - L.hrvSd ? "bad" : L.hrv7 < L.hrvBase - 0.5 * L.hrvSd ? "warn" : "good"]; } },
+  hrvChart: { t: "Graf HRV", d: "Body jsou ranní hodnoty, čára je 7denní průměr, zelené pásmo je tvůj normál za 60 dní. Důležitý je trend čáry, jednotlivé dny hodně kolísají.", dir: "up", dirText: "Čára v pásmu nebo nad ním = dobře. Čára pod pásmem = uber zátěž." },
+  rhr: { t: "Klidový tep", d: "Nejnižší tep v noci nebo ráno. S lepší kondicí dlouhodobě klesá.", dir: "down", dirText: "Nižší = lepší. Nárůst o 5 a víc tepů nad normál = únava, nemoc, alkohol nebo stres.", r: "Normál = tvůj průměr za 60 dní (čárkovaně v grafu).",
+    now: m => m.rhr7 && m.last.rhrBase ? [`7 dní ${r0(m.rhr7)} tepů, normál ${r0(m.last.rhrBase)}`, m.rhr7 > m.last.rhrBase + 4 ? "warn" : "good"] : null },
+  sleep: { t: "Spánek", d: "Délka spánku za noc. Ve spánku se tělo opravuje a ukládá tréninkové adaptace.", dir: "up", dirText: "Více = lepší (do ~9 h).", r: "Sportovci potřebují 7,5–9 h. Pod 7 h klesá výkon i regenerace.",
+    now: m => m.sleep7 ? [`7 dní průměr ${cz(m.sleep7)} h`, m.sleep7 >= 7.5 ? "good" : m.sleep7 >= 7 ? "warn" : "bad"] : null },
+  bb: { t: "Body Battery", d: "Garmin odhad energie 0–100 z HRV, stresu a spánku.", dir: "up", r: "Ráno 75+ = připraven · pod 50 = zvaž lehčí den" },
+  steps: { t: "Kroky", d: "Průměrný počet kroků za den. Doplňková aktivita mimo trénink.", dir: "mid", dirText: "Hodně kroků je fajn, ale ve dnech těžkého tréninku nepotřebuješ extra chůzi.", r: "7–10 tisíc denně je zdravý základ." },
+  pmc: { t: "Graf kondice, únavy a formy", d: "Performance Management Chart. Modrá = kondice (CTL), červená = únava (ATL), zelená = forma (TSB), šedé sloupce = denní zátěž (TSS). Najeď myší do grafu pro hodnoty konkrétního dne.", dir: "mid", dirText: "Cíl: modrá čára pomalu stoupá, zelená v tréninku mírně pod nulou a před závodem nad nulou." },
+  weekly: { t: "Týdenní objem", d: "Hodiny tréninku v jednotlivých týdnech podle disciplín. Čárkovaná čára je tvůj cíl z profilu, poslední sloupec je rozběhnutý týden.", dir: "mid", dirText: "Ideál jsou postupně rostoucí schody a každý 3.–4. týden menší sloupec na odpočinek." },
+  zones: { t: "Intenzita (tepové zóny)", d: "Kolik času trávíš v jednotlivých tepových zónách. Nejlepší výsledky přináší polarizovaný trénink 80/20: většina lehce, malá část opravdu těžce, minimum ve střední zóně.", dir: "mid", r: "Z1–2 ~80 % · Z3 do 10 % · Z4–5 10–20 %" },
+  polarLow: { t: "Lehce (Z1–2)", d: "Aerobní základ: buduje vytrvalost, kapiláry a mitochondrie, přitom moc neunavuje.", dir: "up", dirText: "Kolem 80 % je ideál.", now: m => [`${r0(m.polar.low * 100)} %`, m.polar.low >= .75 ? "good" : "warn"] },
+  polarMid: { t: "Šedá zóna (Z3)", d: "Tempo, které je moc těžké na regeneraci a moc lehké na pořádný podnět. Typická chyba amatérů.", dir: "down", dirText: "Méně = lepší, do 10 %.", now: m => [`${r0(m.polar.mid * 100)} %`, m.polar.mid <= .1 ? "good" : m.polar.mid <= .2 ? "warn" : "bad"] },
+  polarHigh: { t: "Těžce (Z4–5)", d: "Intervaly na prahu a nad ním. Zvyšují rychlost a VO2max, ale hodně unavují.", dir: "mid", dirText: "Ideál 10–20 %. Méně = chybí rychlost, víc = riziko přetížení.", now: m => [`${r0(m.polar.high * 100)} %`, m.polar.high >= .05 && m.polar.high <= .22 ? "good" : "warn"] },
+  z1: { t: "Z1 Regenerace", d: "Velmi lehce: rozjetí, vyjetí, regenerační tréninky. Prokrvení bez únavy.", dir: "mid" },
+  z2: { t: "Z2 Aerobní", d: "Základ vytrvalosti. Zvládneš mluvit v celých větách. Tady má být většina tréninku.", dir: "mid" },
+  z3: { t: "Z3 Tempo", d: "Svižně, mluvíš jen krátké věty. Užitečné pro závodní tempo delších tratí, ale nemá to být výchozí tempo každého tréninku.", dir: "mid" },
+  z4: { t: "Z4 Práh", d: "Kolem anaerobního prahu, udržíš to cca 20–60 min. Intervaly zvyšují prahovou rychlost.", dir: "mid" },
+  z5: { t: "Z5 VO2max", d: "Velmi těžce, jen krátké intervaly 2–5 min. Zvyšuje maximální aerobní výkon.", dir: "mid" },
+  radar: { t: "Radar schopností", d: "8 oblastí na škále 0–100. Plná plocha = posledních 28 dní, čárkovaně = předchozích 28 dní. Číslo vpravo je změna.", dir: "up", dirText: "Větší a vyrovnanější plocha = lepší připravenost. Najeď na jednotlivé osy." },
+  rSwim: { t: "Plavání (radar)", d: "Kondice v plavání (CTL jen z plavání) vůči tomu, co je potřeba na tvůj typ závodu (asi 20 % celkové zátěže).", dir: "up", r: "100 = kondice odpovídá cíli" },
+  rBike: { t: "Kolo (radar)", d: "Kondice na kole (CTL jen z kola) vůči cíli pro tvůj závod (asi 45 % celkové zátěže).", dir: "up", r: "100 = kondice odpovídá cíli" },
+  rRun: { t: "Běh (radar)", d: "Kondice v běhu (CTL jen z běhu) vůči cíli pro tvůj závod (asi 35 % celkové zátěže).", dir: "up", r: "100 = kondice odpovídá cíli" },
+  rStr: { t: "Síla (radar)", d: "Kolikrát týdně chodíš do posilovny vůči cíli z profilu.", dir: "up", r: "100 = plníš cíl" },
+  rBase: { t: "Aerobní báze (radar)", d: "Hodiny v Z1–2 za 28 dní vůči 80 % tvého týdenního cíle.", dir: "up" },
+  rInt: { t: "Intenzita (radar)", d: "Minuty v Z4–5 týdně vůči doporučeným ~75 minutám.", dir: "up", dirText: "Vyšší = víc rychlostního tréninku. Nízké skóre = chybí intervaly." },
+  rReg: { t: "Regenerace (radar)", d: "Průměrná denní připravenost za 28 dní (HRV, klidový tep, spánek, forma).", dir: "up" },
+  rCons: { t: "Pravidelnost (radar)", d: "Kolik dní trénuješ a kolik týdnů splníš aspoň 75 % cíle hodin.", dir: "up" },
+  heat: { t: "Pravidelnost", d: "Každý čtvereček je jeden den, sytost barvy = zátěž (TSS). Sloupec = týden od pondělí do neděle.", dir: "mid", dirText: "Ideál je pravidelný vzor s 1–2 dny volna týdně, žádné dlouhé mezery." },
+  ef: { t: "Aerobní efektivita běhu", d: "Kolik metrů uběhneš na jeden úder srdce (rychlost ÷ tep). Když se zlepšuje aerobní kondice, běžíš při stejném tepu rychleji.", dir: "up", dirText: "Vyšší = lepší. Ovlivňuje ji i teplo, kopce a únava, sleduj trend čáry." },
+  vo2max: { t: "VO2max", d: "Maximální spotřeba kyslíku (ml/kg/min), odhad Garminu. Strop aerobního výkonu.", dir: "up" },
+  lthr: { t: "Tepové zóny z LTHR", d: "Zóny se počítají z prahového tepu (LTHR), což je tep, který udržíš asi hodinu na maximum. Nejpřesnější je ho změřit testem: 30 min běhu naplno, průměr posledních 20 min.", dir: "mid" },
+  runPace: { t: "Běžecké tempo", d: "Zóny z prahového tempa (tempo, které udržíš asi hodinu). Pokud je v profilu nepřesné, budou nepřesné i tempa v plánu.", dir: "mid" },
+  css: { t: "Plavání – CSS", d: "Critical Swim Speed: tempo na 100 m, které udržíš dlouho. Test: 400 m a 200 m naplno, CSS = (čas 400 − čas 200) ÷ 2.", dir: "mid" },
+  ftp: { t: "Výkon – FTP", d: "Functional Threshold Power: výkon ve wattech udržitelný asi hodinu. Watty se dají použít jen s wattmetrem nebo chytrým trenažérem.", dir: "mid" },
+  proj: { t: "Projekce kondice na závod", d: "Odhad tvé kondice (CTL) v den závodu, pokud budeš trénovat jako posledních 28 dní a před závodem odladíš.", dir: "up", dirText: "Projekce kolem cíle nebo nad ním = na závod budeš připraven." },
+  phase: { t: "Fáze přípravy", d: "Základ = objem v Z2 a technika · Rozvoj = víc tempa a prahových intervalů · Vrchol = závodní specifika · Ladění = méně objemu, krátké intenzity, odpočinek před závodem.", dir: "mid" },
+  recovery: { t: "Odlehčovací týden", d: "Každý 4. týden se objem sníží o ~35 %. Tělo si zátěž vstřebá a kondice pak roste rychleji.", dir: "mid" },
+  key: { t: "Klíčový trénink", d: "Nejdůležitější tréninky týdne s vyšší intenzitou. Dělej je odpočatý, ostatní tréninky se jim přizpůsobují.", dir: "mid" },
+  plan: { t: "Plán na týden", d: "Automatický plán podle fáze přípravy, tvého objemu za poslední 4 týdny (+ max. 10 %), slabin z radaru a cíle posilovny. Klikni na trénink pro detail. Fajfka = co jsi opravdu odtrénoval.", dir: "mid" },
+  todayWo: { t: "Dnešní trénink", d: "Konkrétní struktura z plánu s tvými zónami. Při nízké připravenosti kokpit navrhne lehčí náhradu.", dir: "mid" },
+  nutri: { t: "Výživa dnes", d: "Orientační denní příjem podle délky tréninku: sacharidy 3–8 g/kg, bílkoviny 1,6–2 g/kg, pití ~35 ml/kg + 0,6 l na hodinu tréninku.", dir: "mid" },
+  zonesTable: { t: "Tréninkové zóny", d: "Tvoje konkrétní hodnoty pro každou zónu podle profilu. Podle nich se řídí všechny tréninky v plánu.", dir: "mid" },
+  factors: { t: "Co ovlivňuje regeneraci", d: "Porovnání ranní HRV a klidového tepu ve dnech po různých situacích, z tvých vlastních dat. Číslo v závorce = počet dní ve srovnání.", dir: "up", dirText: "Zelený rozdíl = skupina A ti pomáhá k lepší regeneraci." },
+  records: { t: "Osobní maxima", d: "Nejlepší hodnoty za celé období v kokpitu.", dir: "up" },
+  sev: { t: "Závažnost postřehu", d: "Riziko = řeš hned · Pozor = sleduj a uprav · Info = tip · V pořádku = drž to tak.", dir: "mid" }
+};
+const DIR = { up: ["up", "▲", "Vyšší = lepší"], down: ["down", "▼", "Nižší = lepší"], mid: ["mid", "◆", "Záleží na rozsahu"] };
+function tipHTML(el) {
+  const g = GLOSS[el.dataset.tip]; if (!g) return "";
+  const d = DIR[g.dir || "mid"], now = g.now && S.m ? (() => { try { return g.now(S.m); } catch (e) { return null; } })() : null;
+  return `<b class="t">${g.t}</b><p>${g.d}</p><div class="dir ${d[0]}"><span>${d[1]}</span><span>${g.dirText || d[2]}</span></div>${g.r ? `<div class="rng">${g.r}</div>` : ""}${el.dataset.extra ? `<div class="now">${esc(el.dataset.extra)}</div>` : ""}${now ? `<div class="now ${now[1]}">Teď: ${esc(now[0])}</div>` : ""}`;
+}
+function initTips() {
+  const tip = document.createElement("div"); tip.id = "gtip"; tip.hidden = true; tip.setAttribute("role", "tooltip"); document.body.appendChild(tip);
+  let cur = null, shownAt = 0;
+  const place = () => {
+    if (!cur) return; const el = cur;
+    const r = el.getBoundingClientRect(), tw = tip.offsetWidth, th = tip.offsetHeight, vw = innerWidth, vh = innerHeight;
+    let x = clamp(r.left + r.width / 2 - tw / 2, 12, vw - tw - 12), y = r.bottom + 8;
+    if (y + th > vh - 8) y = Math.max(8, r.top - th - 8);
+    tip.style.left = x + "px"; tip.style.top = y + "px";
+    if (r.bottom < 0 || r.top > vh) hide();
+  };
+  const show = el => { const html = tipHTML(el); if (!html) return; cur = el; shownAt = Date.now(); tip.innerHTML = html; tip.hidden = false; place(); };
+  const hide = () => { tip.hidden = true; cur = null; };
+  const find = e => e.target.closest?.('[data-tip]:not([data-tip=""])');
+  document.addEventListener("pointerover", e => { if (e.pointerType !== "mouse") return; const el = find(e); if (el && el !== cur) show(el); else if (!el && cur) hide(); });
+  document.addEventListener("focusin", e => { const el = find(e); if (el) show(el); });
+  document.addEventListener("focusout", hide);
+  document.addEventListener("click", e => { const el = find(e); if (el) { if (el.closest("summary,button")) return; if (el === cur && Date.now() - shownAt > 500) hide(); else if (el !== cur) show(el); } else hide(); });
+  addEventListener("scroll", () => { if (cur) requestAnimationFrame(place); }, { passive: true, capture: true });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") hide(); });
+}
+function decorateTips() { document.querySelectorAll('[data-tip]:not([data-tip=""]):not([tabindex])').forEach(el => { el.tabIndex = 0; }); }
+
 /* ---------------- Boot ---------------- */
 function initUI() {
   $("#rangeSeg").querySelectorAll("button").forEach(b => b.classList.toggle("on", +b.dataset.r === S.range));
@@ -1490,6 +1600,6 @@ async function initDB() {
   sub("wellness", "w", it => { S.userWell = it.filter(w => w && w.date); });
 }
 
-loadLocal(); initUI(); initProfile(); initCoach(); applyData(); initDB();
+loadLocal(); initTips(); initUI(); initProfile(); initCoach(); applyData(); initDB();
 })();
 </script>
