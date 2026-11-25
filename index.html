@@ -3,35 +3,20 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: cockpit — sticky header, left column = dashboard modules in a 12-col grid, right column = AI coach rail (stacks under on narrow screens) */
+/* Single dark theme by user request. Layout: cockpit — sticky header, left column = dashboard modules in a 12-col grid, right column = AI coach rail (stacks under on narrow screens) */
 :root{
-  --bg:#EEF2F5; --surface:#FFFFFF; --surface-2:#F5F8FA; --ink:#0F1C26; --muted:#5B6D7A; --line:#D9E1E7;
-  --accent:#0A6C93; --accent-soft:#D6EAF3;
-  --swim:#1683C4; --bike:#C98A00; --run:#D9482F; --strength:#6E4FD8; --other:#7D8B96;
-  --ctl:#0A6C93; --atl:#D9482F; --tsb:#2E8F62;
-  --good:#22895A; --warn:#C27C00; --bad:#C93838; --info:#0A6C93;
-  --z1:#9FC6DA; --z2:#3F9BC4; --z3:#E2B23C; --z4:#E07A3A; --z5:#C93838;
+  --bg:#050607; --surface:#0E1114; --surface-2:#151A1E; --ink:#E8EDF1; --muted:#8B98A3; --line:#20272D;
+  --accent:#4DB3DE; --accent-soft:#0F2733;
+  --swim:#46A9E6; --bike:#E9AE2A; --run:#F06B52; --strength:#9A80F0; --other:#8C99A3;
+  --ctl:#4DB3DE; --atl:#F06B52; --tsb:#4CC38A;
+  --good:#4CC38A; --warn:#E9AE2A; --bad:#F06464; --info:#4DB3DE;
+  --z1:#2F5566; --z2:#2C83AB; --z3:#C99A2C; --z4:#D46A2E; --z5:#D94848;
   --font-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
   --font-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --font-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
   --r:10px;
+  color-scheme:dark;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0B1218; --surface:#121C24; --surface-2:#17232D; --ink:#E4ECF1; --muted:#8FA1AE; --line:#24343F;
-  --accent:#4DB3DE; --accent-soft:#12303F;
-  --swim:#46A9E6; --bike:#E9AE2A; --run:#F06B52; --strength:#9A80F0; --other:#8C99A3;
-  --ctl:#4DB3DE; --atl:#F06B52; --tsb:#4CC38A;
-  --good:#4CC38A; --warn:#E9AE2A; --bad:#F06464; --info:#4DB3DE;
-  --z1:#2F5566; --z2:#2C83AB; --z3:#C99A2C; --z4:#D46A2E; --z5:#D94848;
-  color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#0B1218; --surface:#121C24; --surface-2:#17232D; --ink:#E4ECF1; --muted:#8FA1AE; --line:#24343F;
-  --accent:#4DB3DE; --accent-soft:#12303F;
-  --swim:#46A9E6; --bike:#E9AE2A; --run:#F06B52; --strength:#9A80F0; --other:#8C99A3;
-  --ctl:#4DB3DE; --atl:#F06B52; --tsb:#4CC38A;
-  --good:#4CC38A; --warn:#E9AE2A; --bad:#F06464; --info:#4DB3DE;
-  --z1:#2F5566; --z2:#2C83AB; --z3:#C99A2C; --z4:#D46A2E; --z5:#D94848;
-  color-scheme:dark}
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
