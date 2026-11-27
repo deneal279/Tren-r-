@@ -265,6 +265,29 @@ svg text[data-tip]{text-decoration:none}
 #gtip .now{margin-top:7px;padding-top:7px;border-top:1px solid var(--line);font-family:var(--font-mono);font-size:12px}
 #gtip .now.good{color:var(--good)}#gtip .now.warn{color:var(--warn)}#gtip .now.bad{color:var(--bad)}
 .tiphint{font-size:12px;color:var(--muted)}
+/* Activity editing */
+select.rpe,input.watt{background:var(--surface-2);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:4px 6px;font-size:12.5px}
+select.rpe{min-width:132px} input.watt{width:76px;font-family:var(--font-mono)}
+tr.need select.rpe{border-color:var(--warn);color:var(--warn)}
+.src{display:inline-block;font-family:var(--font-body);font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:1px 5px;border-radius:4px;margin-left:4px;background:var(--surface-2);color:var(--muted);text-decoration:none}
+.src-w,.src-rpe{color:var(--good)} .src-odhad{color:var(--warn)}
+/* Race potential */
+.pot-in{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:end;margin-bottom:14px}
+@media (max-width:700px){.pot-in{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.pot-in label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+.pot-in input{border:1px solid var(--line);border-radius:7px;padding:7px 9px;background:var(--surface-2);color:var(--ink);font-family:var(--font-mono);font-size:14px;width:100%}
+.pot-total{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}
+@media (max-width:700px){.pot-total{grid-template-columns:minmax(0,1fr)}}
+.pot-total div{background:var(--surface-2);border-radius:8px;padding:10px 12px}
+.pot-total small{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.pot-total b{font-family:var(--font-display);font-size:32px;font-weight:600}
+.pot-total span{display:block;font-size:12px;color:var(--muted)}
+.pot-total .goal b{color:var(--good)}
+.gains{display:grid;gap:8px;margin-top:12px}
+.gain{display:grid;grid-template-columns:5px minmax(0,1fr) auto;gap:12px;background:var(--surface-2);border-radius:8px;padding:9px 12px 9px 0;align-items:center}
+.gain i{align-self:stretch;border-radius:0 3px 3px 0}
+.gain b{font-weight:600} .gain p{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
+.gain em{font-style:normal;font-family:var(--font-display);font-size:22px;color:var(--good);white-space:nowrap}
 /* Plan & workouts */
 .plan-card{container-type:inline-size}
 .plan-sum{display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin-bottom:12px;font-size:13px}
@@ -332,6 +355,7 @@ svg text[data-tip]{text-decoration:none}
     <span class="chip demo" id="srcChip"><span class="dot"></span><span id="srcText">Ukázková data</span></span>
     <nav class="nav" aria-label="Sekce">
       <a href="#dnes" class="on">Dnes</a>
+      <a href="#zavod">Závod</a>
       <a href="#plan">Plán</a>
       <a href="#zatez">Zátěž</a>
       <a href="#profil">Radar</a>
@@ -389,6 +413,22 @@ svg text[data-tip]{text-decoration:none}
     <div class="section-title"><h2>Postřehy a doporučení</h2></div>
     <section class="card c12">
       <div class="insights" id="insights"></div>
+    </section>
+
+    <div class="section-title" id="zavod"><h2>Závodní potenciál</h2><span class="note" id="potRace"></span></div>
+    <section class="card c12">
+      <div class="card-head"><div><h2 data-tip="potential">Co dokážeš na závodě</h2><div class="sub">Tvůj odhad, odhad z dat z Garminu a realistický cíl do dne závodu</div></div><button class="btn" id="potAsk" type="button">Rozebrat s trenérem</button></div>
+      <form class="pot-in" id="potForm">
+        <label for="pSwim"><span id="lSwim">Plavání</span><input id="pSwim" name="pSwim" placeholder="33:00" inputmode="numeric"></label>
+        <label for="pBike"><span id="lBike">Kolo</span><input id="pBike" name="pBike" placeholder="1:30:00" inputmode="numeric"></label>
+        <label for="pRun"><span id="lRun">Běh po kole</span><input id="pRun" name="pRun" placeholder="1:20:00" inputmode="numeric"></label>
+        <button class="btn primary" type="submit">Přepočítat</button>
+      </form>
+      <div class="tbl-scroll"><table id="potTable"></table></div>
+      <div class="pot-total" id="potTotal"></div>
+      <h3 style="font-family:var(--font-display);font-size:18px;text-transform:uppercase;letter-spacing:.05em">Kde ušetříš nejvíc minut</h3>
+      <div class="gains" id="gains"></div>
+      <p class="note" id="potNote"></p>
     </section>
 
     <div class="section-title" id="plan"><h2>Plán na týden</h2><span class="note" id="planRange"></span></div>
@@ -477,9 +517,11 @@ svg text[data-tip]{text-decoration:none}
       <div class="cmp" id="factorsCmp"></div>
     </section>
 
-    <div class="section-title"><h2>Poslední tréninky</h2></div>
+    <div class="section-title" id="treninky"><h2>Poslední tréninky</h2></div>
     <section class="card c12">
+      <p class="note" id="actsHint" style="margin:0 0 10px"></p>
       <div class="tbl-scroll"><table id="acts"></table></div>
+      <div class="status" id="actsStatus"></div>
       <div class="row" style="margin-top:10px"><button class="btn" id="moreActs">Zobrazit další</button></div>
     </section>
 
@@ -565,15 +607,15 @@ const TODAY = iso(new Date());
 
 const SPORTS = { swim: "Plavání", bike: "Kolo", run: "Běh", strength: "Posilovna", other: "Ostatní" };
 const RACE = {
-  sprint:   { label: "Sprint",      ctl: 50,  taper: 7,  legs: [["Plavání","750 m"],["Kolo","20 km"],["Běh","5 km"]] },
-  olympic:  { label: "Olympijský",  ctl: 65,  taper: 10, legs: [["Plavání","1,5 km"],["Kolo","40 km"],["Běh","10 km"]] },
-  "70.3":   { label: "Ironman 70.3",ctl: 80,  taper: 14, legs: [["Plavání","1,9 km"],["Kolo","90 km"],["Běh","21,1 km"]] },
-  ironman:  { label: "Ironman",     ctl: 100, taper: 21, legs: [["Plavání","3,8 km"],["Kolo","180 km"],["Běh","42,2 km"]] }
+  sprint:   { label: "Sprint",      ctl: 50,  taper: 7, dist: [0.75, 20, 5], trans: 4,  legs: [["Plavání","750 m"],["Kolo","20 km"],["Běh","5 km"]] },
+  olympic:  { label: "Olympijský",  ctl: 65,  taper: 10, dist: [1.5, 40, 10], trans: 5, legs: [["Plavání","1,5 km"],["Kolo","40 km"],["Běh","10 km"]] },
+  "70.3":   { label: "Ironman 70.3",ctl: 80,  taper: 14, dist: [1.9, 90, 21.1], trans: 8, legs: [["Plavání","1,9 km"],["Kolo","90 km"],["Běh","21,1 km"]] },
+  ironman:  { label: "Ironman",     ctl: 100, taper: 21, dist: [3.8, 180, 42.2], trans: 10, legs: [["Plavání","3,8 km"],["Kolo","180 km"],["Běh","42,2 km"]] }
 };
-const DEFAULT_PROFILE = { name: "Sportovec", maxHr: 188, restHr: 46, lthr: 0, weight: 0, ftp: 250, runPace: "4:45", css: "1:45", weeklyHours: 10, strengthGoal: 2, raceType: "70.3", raceName: "Ironman 70.3", raceDate: addDays(TODAY, 68) };
+const DEFAULT_PROFILE = { name: "Sportovec", pSwim: "", pBike: "", pRun: "", maxHr: 188, restHr: 46, lthr: 0, weight: 0, ftp: 250, runPace: "4:45", css: "1:45", weeklyHours: 10, strengthGoal: 2, raceType: "70.3", raceName: "Ironman 70.3", raceDate: addDays(TODAY, 68) };
 
 const S = { profile: { ...DEFAULT_PROFILE }, userActs: [], userWell: [], acts: [], well: [], source: "demo", range: 90, m: null, actsShown: 12, db: null };
-S.aiPlan = null; S.planMode = "auto";
+S.aiPlan = null; S.planMode = "auto"; S.ovr = {};
 try { const r = localStorage.getItem("tk_range"); if (r) S.range = +r || 90; S.planMode = localStorage.getItem("tk_planMode") || "auto"; } catch (e) {}
 
 /* ---------------- Demo data ---------------- */
@@ -759,6 +801,12 @@ function insights(m) {
   if (runP >= 60 && run7 > runP * 1.3) add("warn", "Rychlý nárůst běhu", `Běh ${r0(run7)} min za 7 dní proti ${r0(runP)} min předtím (+${r0((run7 / runP - 1) * 100)} %). Šlachy a kosti se adaptují pomaleji než srdce, drž nárůst do 10–20 % týdně.`, "Běh", "Běhám víc než minulý týden. Jak se vyhnout zranění?");
   const rest14 = m.days.slice(-14).filter(d => d.n === 0).length;
   if (rest14 === 0) add("warn", "Žádný den volna", "Posledních 14 dní jsi trénoval každý den. Aspoň 1 den v týdnu dej úplné volno nebo jen mobilitu.", "Volno");
+  const unr = S.acts.filter(a => diffDays(a.date, TODAY) < 28 && !a.rpeEff && !a.wOwn && (a.sport === "strength" || (a.sport === "bike" && a.trainer))).length;
+  if (unr && S.source !== "demo") add("warn", "Zátěž je u části tréninků jen odhad", `${unr} tréninků za 28 dní (posilovna, kolo na trenažéru) nemá hodnocení náročnosti. Tep tam skutečnou zátěž podhodnocuje. Ohodnoť je v tabulce Poslední tréninky (RPE 1–10) nebo zapni na hodinkách „Vnímané úsilí“ po aktivitě.`, "Data");
+  const wHi = S.acts.filter(a => a.wOwn && a.dur >= 30 && P.ftp && a.wOwn > P.ftp * 1.05).sort((a, b) => b.wOwn - a.wOwn)[0];
+  if (wHi) add("info", "FTP v profilu je asi nízké", `Zadal jsi ${wHi.wOwn} W na ${fmtDur(wHi.dur)}, ale FTP v profilu je ${P.ftp} W. Pokud wattům z trenažéru věříš, nastav FTP asi na ${r0(wHi.wOwn * (wHi.dur >= 55 ? 1 : 0.95))} W, jinak se zátěž počítá přehnaně.`, "FTP");
+  const lowHrBike = S.acts.filter(a => a.sport === "bike" && a.trainer && diffDays(a.date, TODAY) < 42 && a.hr && a.hr < ZN.hr[1][0]).length;
+  if (lowHrBike >= 3 && S.source !== "demo") add("info", "Nízký tep na trenažéru", `${lowHrBike} jízd na trenažéru má průměrný tep v Z1. Pokud měříš tep zápěstím, na kole bývá nepřesný (ruka je v klidu). Hrudní pás dá věrné hodnoty a zátěž se spočítá správně.`, "Tep");
   const order = { bad: 0, warn: 1, info: 2, good: 3 };
   return out.sort((a, b) => order[a.sev] - order[b.sev]);
 }
@@ -805,7 +853,7 @@ function render() {
   $("#srcText").textContent = demo ? "Ukázková data" : "Tvoje data";
   $("#todayDate").textContent = fmtDL(TODAY);
   renderToday(m); renderRace(m); renderKPIs(m); renderInsights(m);
-  renderPlan(); renderTodayWorkout();
+  renderPotential(); renderPlan(); renderTodayWorkout();
   drawPMC(); drawWeekly(); renderZones(m); drawRadar(); renderHeat(m); drawHRV(); drawRHR(); drawSleep(); renderActs();
   renderZoneTable(); renderRecords(); drawEfficiency(); renderMonthly(); renderRecoveryFactors();
   decorateTips();
@@ -917,7 +965,7 @@ function renderZones(m) {
   const bar = (arr, lbl) => { const t = arr.reduce((a, b) => a + b, 0) || 1; return arr.map((v, k) => v > 0 ? `<div class="z${k + 1}" style="flex:${v}" data-tip="z${k + 1}" data-extra="Tvůj podíl: ${r0(v / t * 100)} % času">${lbl && v / t > 0.07 ? "Z" + (k + 1) : ""}</div>` : "").join(""); };
   if (!sum) { $("#zTotal").innerHTML = ""; $("#zSports").innerHTML = `<p class="note">Žádná data o zónách za 28 dní.</p>`; $("#polar").innerHTML = ""; $("#polarPill").innerHTML = ""; return; }
   $("#zTotal").innerHTML = bar(z, true);
-  $("#zSports").innerHTML = ["swim", "bike", "run", "strength"].filter(s => m.zonesSport[s]).map(s => { const a = m.zonesSport[s], t = a.reduce((x, y) => x + y, 0); return `<div class="zrow"><span class="sport"><i class="b-${s}"></i>${SPORTS[s]}</span><div class="zbar">${bar(a)}</div><span class="num note" style="text-align:right">${r0(t / 60)} h</span></div>`; }).join("");
+  $("#zSports").innerHTML = ["swim", "bike", "run"].filter(s => m.zonesSport[s]).map(s => { const a = m.zonesSport[s], t = a.reduce((x, y) => x + y, 0); return `<div class="zrow"><span class="sport"><i class="b-${s}"></i>${SPORTS[s]}</span><div class="zbar">${bar(a)}</div><span class="num note" style="text-align:right">${r0(t / 60)} h</span></div>`; }).join("");
   const p = m.polar, ok = p.low >= 0.75 && p.mid <= 0.2;
   $("#polarPill").innerHTML = `<span class="pill ${ok ? "good" : "warn"}">${ok ? "80/20 ✓" : "mimo 80/20"}</span>`;
   $("#polar").innerHTML = `<div><small data-tip="polarLow">Lehce Z1–2</small><b>${r0(p.low * 100)} %</b><span> cíl ~80 %</span></div><div><small data-tip="polarMid">Šedá Z3</small><b>${r0(p.mid * 100)} %</b><span> cíl ≤ 10 %</span></div><div><small data-tip="polarHigh">Těžce Z4–5</small><b>${r0(p.high * 100)} %</b><span> cíl 10–20 %</span></div>`;
@@ -990,10 +1038,16 @@ function drawSleep() {
 }
 
 function renderActs() {
-  const list = [...S.acts].sort((a, b) => b.date.localeCompare(a.date)).slice(0, S.actsShown);
-  $("#acts").innerHTML = `<thead><tr><th>Datum</th><th>Sport</th><th>Trénink</th><th class="n">Čas</th><th class="n">Vzdálenost</th><th class="n" data-tip="tss">TSS</th><th class="n">Prům. tep</th></tr></thead><tbody>` +
-    list.map(a => `<tr><td>${fmtD(a.date)}</td><td><span class="sport"><i class="b-${a.sport}"></i>${SPORTS[a.sport] || a.sport}</span></td><td class="name">${esc(a.name)}</td><td class="n">${fmtDur(a.dur)}</td><td class="n">${a.dist ? (a.sport === "swim" ? r0(a.dist * 1000).toLocaleString("cs-CZ") + " m" : r1(a.dist).toLocaleString("cs-CZ") + " km") : "–"}</td><td class="n">${r0(a.tss || 0)}</td><td class="n">${a.hr || "–"}</td></tr>`).join("") + `</tbody>`;
+  const list = [...S.acts].sort((a, b) => b.date.localeCompare(a.date)).slice(0, S.actsShown), canEdit = S.source !== "demo";
+  const need = a => !a.rpeOwn && !a.wOwn && (a.sport === "strength" || (a.sport === "bike" && a.trainer)) && !a.rpeEff;
+  $("#acts").innerHTML = `<thead><tr><th>Datum</th><th>Sport</th><th>Trénink</th><th class="n">Čas</th><th class="n">Vzdálenost</th><th class="n">Prům. tep</th><th data-tip="rpe">Náročnost</th><th data-tip="wOwn">Výkon kolo</th><th class="n" data-tip="load">Zátěž</th></tr></thead><tbody>` +
+    list.map(a => `<tr${need(a) ? ' class="need"' : ""}><td>${fmtD(a.date)}</td><td><span class="sport"><i class="b-${a.sport}"></i>${SPORTS[a.sport] || a.sport}${a.trainer ? ' <span class="note">trenažér</span>' : ""}</span></td><td class="name">${esc(a.name)}</td><td class="n">${fmtDur(a.dur)}</td><td class="n">${a.dist ? (a.sport === "swim" ? r0(a.dist * 1000).toLocaleString("cs-CZ") + " m" : r1(a.dist).toLocaleString("cs-CZ") + " km") : "–"}</td><td class="n">${a.hr || "–"}</td>
+      <td>${canEdit ? `<select class="rpe" data-id="${esc(a.id)}" aria-label="Náročnost ${esc(a.name)}"><option value="">${a.rpe ? "Garmin: " + a.rpe : need(a) ? "Ohodnoť…" : "–"}</option>${RPE_TXT.slice(1).map((t, i) => `<option value="${i + 1}"${a.rpeOwn === i + 1 ? " selected" : ""}>${t}</option>`).join("")}</select>` : (a.rpeEff || "–")}</td>
+      <td>${a.sport === "bike" && canEdit ? `<input class="watt" data-id="${esc(a.id)}" type="number" min="0" max="800" step="5" placeholder="W" value="${a.wOwn || ""}" aria-label="Průměrný výkon ve wattech">` : ""}</td>
+      <td class="n">${r0(a.tss || 0)} <span class="src src-${a.src.replace(/\s.*/, "").toLowerCase()}" data-tip="load">${a.src}</span>${a.src !== "tep" && a.tssHr != null && Math.abs(a.tssHr - a.tss) >= 5 ? `<div class="note">z tepu ${r0(a.tssHr)}</div>` : ""}</td></tr>`).join("") + `</tbody>`;
   $("#moreActs").hidden = S.acts.length <= S.actsShown;
+  const n = S.acts.filter(a => diffDays(a.date, TODAY) < 28 && need(a)).length;
+  $("#actsHint").innerHTML = canEdit ? (n ? `<b>${n} tréninků za 28 dní nemá hodnocení náročnosti</b> (posilovna a kolo na trenažéru). Ohodnoť je ve sloupci Náročnost, zátěž se přepočítá. U kola můžeš zadat i průměrné watty.` : "Náročnost (RPE 1–10) a watty u kola můžeš upravit u každého tréninku, zátěž se hned přepočítá.") : "";
 }
 
 /* ---------------- Zones ---------------- */
@@ -1274,6 +1328,8 @@ function coachContext() {
   lines.push(`REGENERACE: připravenost ${Number.isFinite(L.ready) ? r0(L.ready) : "?"} /100; HRV dnes ${w?.hrv ?? "?"} ms, 7d ${f(L.hrv7)}, normál ${f(L.hrvBase)}±${f(L.hrvSd)}; klidový tep dnes ${w?.rhr ?? "?"}, 7d ${f(m.rhr7)}, normál ${f(L.rhrBase)}; spánek dnes ${w?.sleep ?? "?"} h, 7d ${f(m.sleep7)} h; Body Battery ${w?.bb ?? "?"}; stres ${w?.stress ?? "?"}.`);
   if (ZN) lines.push(`TRÉNINKOVÉ ZÓNY: ${zonesText()}`);
   if (S.plan) lines.push(`PLÁN TOHOTO TÝDNE (${S.plan.source === "ai" ? "od trenéra" : "automatický"}, fáze ${PHASE[S.plan.ph]}${S.plan.recovery ? ", odlehčovací" : ""}): ` + S.plan.days.map(d => `${d.date}: ${d.items.map(i => `${i.title} ${i.mins} min`).join(" + ") || "volno"}`).join("; "));
+  try { const X = racePotential(); if (X.ok) lines.push(`ZÁVODNÍ POTENCIÁL (${X.R.label}): moje časy plav/kolo/běh po kole ${X.own.map(v => v ? fmtT(v) : "?").join(" / ")}; z dat ${X.data.map(v => v ? fmtT(v) : "?").join(" / ")}; realistický cíl ${X.pot.map(p => fmtT(p[0]) + "–" + fmtT(p[1])).join(" / ")}${X.fade != null ? `; běh po kole o ${r0(X.fade * 100)} % pomalejší než čerstvý` : ""}.`); } catch (e) {}
+  lines.push(`POZNÁMKA K DATŮM: Zátěž tréninků = vlastní watty > vlastní RPE > RPE z Garminu > tep. Na trenažéru bez wattmetru je tep nízký a zátěž z tepu podhodnocená. Posilovna se počítá z RPE, ne z tepových zón.`);
   lines.push(`ZÓNY 28 DNÍ: Z1–2 ${r0(m.polar.low * 100)} %, Z3 ${r0(m.polar.mid * 100)} %, Z4–5 ${r0(m.polar.high * 100)} %.`);
   if (m.radar) lines.push(`RADAR 0–100 (teď / před 28 dny): ` + m.radar.map((d, i) => `${d[0]} ${d[1]}/${m.radarPrev?.[i]?.[1] ?? "?"}`).join(", "));
   lines.push(`TÝDNY (hodiny plav/kolo/běh/síla, TSS): ` + m.weeks.slice(-8).map(wk => `${wk.start}: ${r1(wk.h.swim)}/${r1(wk.h.bike)}/${r1(wk.h.run)}/${r1(wk.h.strength)}, ${r0(wk.tss)}`).join("; "));
@@ -1428,10 +1484,36 @@ async function saveData() {
   try { for (const [coll, items] of [["activities", S.userActs], ["wellness", S.userWell]]) { const g = byMonth(items); for (const k of Object.keys(g)) await S.db.collection(coll).doc(k).set({ month: k, items: g[k] }); } return true; }
   catch (e) { $("#importStatus").textContent = "Uložení selhalo: " + (e?.message || "neznámá chyba"); return false; }
 }
+const RPE_IF = [0, .5, .55, .6, .67, .74, .8, .87, .93, 1.0, 1.05];
+const RPE_TXT = ["", "1 · velmi lehce", "2 · lehce", "3 · pohodově", "4 · mírně", "5 · středně", "6 · svižně", "7 · těžce", "8 · velmi těžce", "9 · skoro naplno", "10 · maximum"];
+const ENDUR = new Set(["swim", "bike", "run"]);
+/* Effective load: own watts > own RPE > Garmin RPE (strength, indoor bike, swim) > heart rate. Strength never uses HR zones. */
+function effLoad(a) {
+  const o = S.ovr[a.id] || {}, h = (a.dur || 0) / 60, F = S.profile.ftp, own = Number(o.rpe) || 0, grm = Number(a.rpe) || 0;
+  let tss = a.tss || 0, src = ENDUR.has(a.sport) ? "tep" : "odhad", z = ENDUR.has(a.sport) ? a.z : null, rpe = own || grm || 0;
+  const fromRpe = r => { const IF = RPE_IF[clamp(Math.round(r), 1, 10)]; return h * IF * IF * 100; };
+  if (a.sport === "bike" && Number(o.w) > 0 && F > 0) {
+    const IF = Math.min(1.15, Number(o.w) * 1.03 / F); tss = h * IF * IF * 100; src = "W";
+    const zi = IF < .76 ? 1 : IF < .91 ? 2 : IF < 1.06 ? 3 : 4; z = [0, Math.round(a.dur * .3), 0, 0, 0]; z[zi] += Math.round(a.dur * .7);
+  } else if (own) { tss = fromRpe(own); src = "RPE"; }
+  else if (grm && (a.sport === "strength" || a.trainer || a.sport === "swim" || a.sport === "other")) { tss = fromRpe(grm); src = "RPE Garmin"; }
+  else if (a.sport === "strength") { tss = fromRpe(6); src = "odhad"; }
+  if (z && rpe >= 7 && src !== "W") { const t = z.reduce((x, y) => x + y, 0) || a.dur, hi = (z[3] + z[4]) / (t || 1); if (hi < .1) { const f = rpe >= 9 ? [.15, .35, .05, .25, .2] : [.15, .45, .1, .2, .1]; z = f.map(v => Math.round(v * a.dur)); } }
+  return { ...a, tss: Math.round(tss), tssHr: a.tss, src, z, rpeEff: rpe || null, wOwn: Number(o.w) || null, rpeOwn: own || null };
+}
 function applyData() {
   if (S.userActs.length) { S.acts = S.userActs; S.well = S.userWell; S.source = "user"; }
   else { const d = DEMO || (DEMO = genDemo()); S.acts = d.acts; S.well = S.userWell.length ? S.userWell : d.well; S.source = S.userWell.length ? "user" : "demo"; if (S.userWell.length) S.acts = d.acts; }
+  S.acts = S.acts.map(effLoad);
   render();
+}
+let ovrQueue = Promise.resolve();
+function setOverride(id, patch) {
+  const cur = { ...(S.ovr[id] || {}), ...patch }; for (const k in cur) if (!cur[k]) delete cur[k];
+  const next = { ...S.ovr }; if (Object.keys(cur).length) next[id] = cur; else delete next[id];
+  S.ovr = next; applyData();
+  if (S.db) { const snap = { items: S.ovr }; ovrQueue = ovrQueue.then(() => S.db.doc("overrides/activities").set(snap)).catch(() => { $("#actsStatus").textContent = "Hodnocení se nepodařilo uložit, zkus to znovu."; }); }
+  else { try { localStorage.setItem("tk_ovr", JSON.stringify(S.ovr)); } catch (e) {} }
 }
 let DEMO = null;
 
@@ -1456,6 +1538,60 @@ function initProfile() {
       w.innerHTML = `<button class="btn danger" id="clearBtn" type="button">Smazat nahraná data</button>`; $("#profStatus").textContent = "Data smazána."; applyData();
     }
   });
+}
+
+
+/* ---------------- Race potential ---------------- */
+function parseT(s) { s = String(s || "").trim().replace(",", "."); if (!s) return null; const p = s.split(":").map(Number); if (p.some(x => !Number.isFinite(x))) return null;
+  if (p.length === 3) return p[0] * 60 + p[1] + p[2] / 60; if (p.length === 2) return p[0] <= 5 ? p[0] * 60 + p[1] : p[0] + p[1] / 60; return p[0]; }
+function fmtT(min) { const s = Math.round(min * 60), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return h ? `${h}:${pad(m)}:${pad(x)}` : `${m}:${pad(x)}`; }
+function racePotential() {
+  const P = S.profile, R = RACE[P.raceType] || RACE.olympic, [dS, dB, dR] = R.dist, A = S.acts;
+  const recent = a => diffDays(a.date, TODAY) <= 180;
+  const swims = A.filter(a => a.sport === "swim" && a.dist >= Math.min(0.75, dS * 0.6) && recent(a));
+  const bestSwim = swims.reduce((b, a) => !b || a.dur / a.dist < b.dur / b.dist ? a : b, null);
+  const dataSwim = bestSwim ? bestSwim.dur / bestSwim.dist * dS * 1.04 : null;
+  const rides = A.filter(a => a.sport === "bike" && !a.trainer && a.dist >= Math.min(25, dB * 0.6) && recent(a));
+  const bestRide = rides.reduce((b, a) => !b || a.dist / a.dur > b.dist / b.dur ? a : b, null);
+  const dataBike = bestRide ? dB / (bestRide.dist / (bestRide.dur / 60) * 1.06) * 60 : null;
+  const runs = A.filter(a => a.sport === "run" && !a.trainer && a.dist >= Math.min(4.5, dR * 0.4) && recent(a));
+  const eq = a => a.dur * Math.pow(dR / a.dist, 1.06);
+  const bestRun = runs.reduce((b, a) => !b || eq(a) < eq(b) ? a : b, null);
+  const freshRun = bestRun ? eq(bestRun) : null, dataRun = freshRun ? freshRun * 1.07 : null;
+  const own = [parseT(P.pSwim), parseT(P.pBike), parseT(P.pRun)], data = [dataSwim, dataBike, dataRun];
+  const cur = own.map((v, i) => v || data[i]);
+  const wks = P.raceDate ? Math.max(0, diffDays(TODAY, P.raceDate) / 7) : 20, f = clamp(wks / 36, 0.15, 1);
+  const IMP = [[.04, .08], [.07, .14], [.08, .15]];
+  const fade = own[2] && freshRun ? own[2] / freshRun - 1 : null;
+  const pot = cur.map((v, i) => v == null ? null : [v * (1 - IMP[i][1] * f), v * (1 - IMP[i][0] * f)]);
+  if (pot[2] && fade != null && fade > .08) { const tgt = freshRun * (1 - IMP[2][0] * f) * 1.05; pot[2] = [Math.min(pot[2][0], tgt * 0.97), Math.min(pot[2][1], tgt)]; }
+  const trans = [R.trans, R.trans * 0.7];
+  return { R, dist: R.dist, own, data, cur, pot, trans, fade, freshRun, bestSwim, bestRide, bestRun, wks, ok: cur.every(v => v != null) };
+}
+function renderPotential() {
+  const P = S.profile, X = racePotential(), R = X.R, names = ["Plavání", "Kolo", "Běh po kole"], sp = ["swim", "bike", "run"];
+  $("#potRace").textContent = `${R.label}: ${X.dist[0].toLocaleString("cs-CZ")} km + ${X.dist[1]} km + ${X.dist[2].toLocaleString("cs-CZ")} km`;
+  $("#lSwim").textContent = `Plavání ${X.dist[0].toLocaleString("cs-CZ")} km`; $("#lBike").textContent = `Kolo ${X.dist[1]} km`; $("#lRun").textContent = `Běh ${X.dist[2].toLocaleString("cs-CZ")} km po kole`;
+  const f = $("#potForm"); if (!f.dataset.dirty) { f.elements.pSwim.value = P.pSwim || ""; f.elements.pBike.value = P.pBike || ""; f.elements.pRun.value = P.pRun || ""; }
+  const pace = (i, t) => i === 0 ? `${secPace(t * 60 / (X.dist[0] * 10))}/100 m` : i === 1 ? `${cz(X.dist[1] / (t / 60))} km/h` : `${secPace(t * 60 / X.dist[2])}/km`;
+  const src = i => i === 0 && X.bestSwim ? `${esc(X.bestSwim.name)} ${fmtD(X.bestSwim.date)}: ${r0(X.bestSwim.dist * 1000)} m za ${fmtT(X.bestSwim.dur)}` : i === 1 && X.bestRide ? `${fmtD(X.bestRide.date)}: ${cz(X.bestRide.dist)} km za ${fmtT(X.bestRide.dur)} (${cz(X.bestRide.dist / (X.bestRide.dur / 60))} km/h), v závodě +6 %` : i === 2 && X.bestRun ? `${fmtD(X.bestRun.date)}: ${cz(X.bestRun.dist)} km za ${fmtT(X.bestRun.dur)} → ${X.dist[2]} km čerstvý ${fmtT(X.freshRun)}, po kole +7 %` : "venkovní data chybí";
+  const hrT = [ZS.hr(2), ZS.hr(2), `${ZN.hr[2][0]}–${ZN.hr[3][1]} tepů`];
+  $("#potTable").innerHTML = `<thead><tr><th>Disciplína</th><th class="n">Tvůj čas</th><th class="n" data-tip="potData">Z dat Garmin</th><th class="n" data-tip="potential">Potenciál na závod</th><th>Závodní tempo (cíl)</th><th>Z čeho to počítám</th></tr></thead><tbody>` +
+    [0, 1, 2].map(i => { const p = X.pot[i], mid = p ? (p[0] + p[1]) / 2 : null; return `<tr><td><span class="sport"><i class="b-${sp[i]}"></i>${names[i]}</span></td><td class="n">${X.own[i] ? fmtT(X.own[i]) : "–"}</td><td class="n">${X.data[i] ? fmtT(X.data[i]) : "–"}</td><td class="n"><b>${p ? `${fmtT(p[0])}–${fmtT(p[1])}` : "–"}</b></td><td>${mid ? `${pace(i, mid)} · ${hrT[i]}` : "–"}</td><td class="name note">${src(i)}</td></tr>`; }).join("") +
+    `<tr><td>Depo T1 + T2</td><td class="n">~${fmtT(X.trans[0])}</td><td class="n">–</td><td class="n"><b>~${fmtT(X.trans[1])}</b></td><td>nacvičené přechody</td><td class="name note">běžný amatér, s nácvikem rychleji</td></tr></tbody>`;
+  if (!X.ok) { $("#potTotal").innerHTML = `<div><small>Chybí data</small><span>Doplň svoje časy nahoře, nebo odjeď venkovní trénink s GPS.</span></div>`; $("#gains").innerHTML = ""; return; }
+  const curT = X.cur.reduce((a, b) => a + b, 0) + X.trans[0], potLo = X.pot.reduce((a, p) => a + p[0], 0) + X.trans[1], potHi = X.pot.reduce((a, p) => a + p[1], 0) + X.trans[1];
+  const dataT = X.data.every(v => v) ? X.data.reduce((a, b) => a + b, 0) + X.trans[0] : null;
+  $("#potTotal").innerHTML = `<div><small>Kdyby byl závod dnes</small><b>${fmtT(curT)}</b><span>${X.own.some(Boolean) ? "z tvých časů, doplněno daty" : "z dat Garmin"}</span></div><div><small>Odhad čistě z dat</small><b>${dataT ? fmtT(dataT) : "–"}</b><span>nejlepší výkony za 6 měsíců</span></div><div class="goal"><small>Realistický cíl ${P.raceDate ? fmtD(P.raceDate) : ""}</small><b>${fmtT(potLo)}–${fmtT(potHi)}</b><span>při pravidelném plánu ${r0(X.wks)} týdnů, úspora ${r0(curT - potHi)}–${r0(curT - potLo)} min</span></div>`;
+  const tips = [
+    ["swim", "Plavání", "2× týdně CSS série (8–12× 100 m) a 1× technika. Nacvič plavání v neoprenu a orientaci na bóje, ušetří i 1–2 min."],
+    ["bike", "Kolo", "Největší rezerva: víc venkovních jízd, 1× týdně tempo v Z3 a dlouhá jízda. Nastavená pozice a rovnoměrné tempo bez nárazů nad práh."],
+    ["run", "Běh po kole", X.fade != null && X.fade > .08 ? `Po kole jsi o ${r0(X.fade * 100)} % pomalejší než čerstvý. Brick 1× týdně (15–30 min běhu hned po kole) to srazí na ~5 %. K tomu aerobní základ v Z2.` : "Brick 1× týdně, dlouhý běh v Z2 a 1× týdně intervaly. Každé kilo dolů zrychlí běh zhruba o 1 %."],
+    ["other", "Depo", "Nacvič T1 a T2 (neopren dolů, helma, gumičky v botách). Rozdíl 2–3 minuty bez jediného tréninku navíc."]
+  ];
+  const sav = [0, 1, 2].map(i => X.cur[i] - (X.pot[i][0] + X.pot[i][1]) / 2).concat([X.trans[0] - X.trans[1]]);
+  $("#gains").innerHTML = tips.map((t, i) => [sav[i], t]).sort((a, b) => b[0] - a[0]).map(([v, t]) => `<div class="gain"><i class="b-${t[0]}"></i><div><b>${t[1]}</b><p>${esc(t[2])}</p></div><em>−${r0(v)} min</em></div>`).join("");
+  $("#potNote").textContent = "Odhad vychází z tvých nejlepších výkonů a běžného zlepšení amatérů při pravidelném tréninku. Plavání v open water +4 % proti bazénu, kolo v závodě +6 % proti tréninku, běh po kole +7 % proti čerstvému. Čím víc venkovních tréninků s GPS, tím přesnější.";
 }
 
 /* ---------------- Tooltips (glossary) ---------------- */
@@ -1522,6 +1658,11 @@ const GLOSS = {
   zonesTable: { t: "Tréninkové zóny", d: "Tvoje konkrétní hodnoty pro každou zónu podle profilu. Podle nich se řídí všechny tréninky v plánu.", dir: "mid" },
   factors: { t: "Co ovlivňuje regeneraci", d: "Porovnání ranní HRV a klidového tepu ve dnech po různých situacích, z tvých vlastních dat. Číslo v závorce = počet dní ve srovnání.", dir: "up", dirText: "Zelený rozdíl = skupina A ti pomáhá k lepší regeneraci." },
   records: { t: "Osobní maxima", d: "Nejlepší hodnoty za celé období v kokpitu.", dir: "up" },
+  rpe: { t: "Náročnost (RPE 1–10)", d: "Jak těžký trénink subjektivně byl: 1 = velmi lehce, 5 = středně, 7 = těžce, 10 = maximum. Kde tep nefunguje (posilovna, trenažér, plavání), počítá se zátěž podle RPE. Hodnota z Garminu se použije sama, tvoje hodnocení má přednost.", dir: "mid", r: "Zátěž = délka × intenzita podle RPE. Hodina na RPE 7 ≈ 75 TSS, na RPE 4 ≈ 45 TSS." },
+  wOwn: { t: "Výkon na kole (W)", d: "Průměrné watty z trenažéru nebo aplikace. Když je zadáš, zátěž se spočítá z výkonu vůči FTP v profilu, což je nejpřesnější.", dir: "mid", r: "Hlídej, aby FTP v profilu odpovídalo wattům, jinak vyjde zátěž přehnaná." },
+  load: { t: "Zátěž (TSS) a její zdroj", d: "Štítek říká, z čeho je zátěž spočítaná: W = watty, RPE = tvoje hodnocení, RPE Garmin = hodnocení z hodinek, TEP = tepová frekvence, ODHAD = posilovna bez hodnocení (RPE 6).", dir: "mid", dirText: "Nejpřesnější je W, pak RPE. Tep na trenažéru a v posilovně zátěž podhodnocuje." },
+  potential: { t: "Závodní potenciál", d: "Realistický čas v den závodu, když budeš do té doby pravidelně trénovat podle plánu. Vychází z tvých současných časů a běžného zlepšení amatérů (plavání 4–8 %, kolo 7–14 %, běh 8–15 % za ~9 měsíců).", dir: "down", dirText: "Nižší čas = lepší." },
+  potData: { t: "Odhad z dat Garmin", d: "Čas spočítaný z tvých nejlepších venkovních výkonů za 6 měsíců: tempo v bazénu +4 % na open water, nejrychlejší jízda +6 % na závodní úsilí, nejlepší běh přepočtený na závodní vzdálenost (Riegelův vzorec) +7 % po kole.", dir: "down" },
   sev: { t: "Závažnost postřehu", d: "Riziko = řeš hned · Pozor = sleduj a uprav · Info = tip · V pořádku = drž to tak.", dir: "mid" }
 };
 const DIR = { up: ["up", "▲", "Vyšší = lepší"], down: ["down", "▼", "Nižší = lepší"], mid: ["mid", "◆", "Záleží na rozsahu"] };
@@ -1558,8 +1699,13 @@ function initUI() {
   $("#rangeSeg").querySelectorAll("button").forEach(b => b.classList.toggle("on", +b.dataset.r === S.range));
   $("#rangeSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; S.range = +b.dataset.r; try { localStorage.setItem("tk_range", S.range); } catch (err) {} $("#rangeSeg").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b)); drawPMC(); });
   $("#moreActs").addEventListener("click", () => { S.actsShown += 20; renderActs(); });
+  $("#acts").addEventListener("change", e => { const t = e.target; if (!t.dataset.id) return; if (t.classList.contains("rpe")) setOverride(t.dataset.id, { rpe: Number(t.value) || 0 }); if (t.classList.contains("watt")) setOverride(t.dataset.id, { w: clamp(Number(t.value) || 0, 0, 800) }); });
   $("#planSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (!b || b.disabled) return; S.planMode = b.dataset.m; try { localStorage.setItem("tk_planMode", S.planMode); } catch (err) {} renderPlan(); renderTodayWorkout(); });
   $("#aiPlanBtn").addEventListener("click", makeAiPlan);
+  $("#potForm").addEventListener("input", () => { $("#potForm").dataset.dirty = "1"; });
+  $("#potForm").addEventListener("submit", async e => { e.preventDefault(); const f = e.target; S.profile = { ...S.profile, pSwim: f.elements.pSwim.value.trim(), pBike: f.elements.pBike.value.trim(), pRun: f.elements.pRun.value.trim() }; delete f.dataset.dirty; render();
+    if (S.db) { try { await S.db.doc("athlete/profile").set(S.profile); } catch (err) {} } else { try { localStorage.setItem("tk_profile", JSON.stringify(S.profile)); } catch (err) {} } });
+  $("#potAsk").addEventListener("click", () => { document.getElementById("trener").scrollIntoView({ behavior: "smooth", block: "start" }); ask("Rozeber můj závodní potenciál na můj cílový závod: odhad času z dat a mých časů, kde mám největší rezervy a konkrétní plán, jak se do dne závodu zlepšit v každé disciplíně. Zohledni, že na trenažéru nemám funkční wattmetr a tep tam je nízký."); });
   $("#woAsk").addEventListener("click", () => { const day = S.plan?.days.find(d => d.date === TODAY), t = day?.items.map(i => i.title).join(" + ") || "volno"; document.getElementById("trener").scrollIntoView({ behavior: "smooth", block: "start" }); ask(`Dnes mám v plánu: ${t}. Uprav mi to podle mé aktuální připravenosti, napiš přesnou strukturu s mými zónami a co jíst před a po.`); });
   $("#fileIn").addEventListener("change", e => { if (e.target.files.length) handleFiles([...e.target.files]); e.target.value = ""; });
   const dz = $("#drop");
@@ -1568,16 +1714,17 @@ function initUI() {
   dz.addEventListener("drop", e => { e.preventDefault(); dz.classList.remove("over"); const f = [...(e.dataTransfer?.files || [])]; if (f.length) handleFiles(f); });
   const nav = [...document.querySelectorAll(".nav a")];
   const io = "IntersectionObserver" in window ? new IntersectionObserver(es => { for (const en of es) if (en.isIntersecting) nav.forEach(a => a.classList.toggle("on", a.getAttribute("href") === "#" + en.target.id)); }, { rootMargin: "-40% 0px -55% 0px" }) : null;
-  if (io) ["dnes", "plan", "zatez", "profil", "vykon", "regenerace", "data", "trener"].forEach(id => { const el = document.getElementById(id); if (el) io.observe(el); });
+  if (io) ["dnes", "zavod", "plan", "zatez", "profil", "vykon", "regenerace", "data", "trener"].forEach(id => { const el = document.getElementById(id); if (el) io.observe(el); });
   let rt; const ro = new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { if (S.m) { drawPMC(); drawWeekly(); drawRadar(); drawHRV(); drawRHR(); drawSleep(); drawEfficiency(); } }, 120); });
   ro.observe($("#dash"));
 }
-function loadLocal() { try { const p = JSON.parse(localStorage.getItem("tk_profile") || "null"); if (p) S.profile = { ...DEFAULT_PROFILE, ...p }; S.userActs = JSON.parse(localStorage.getItem("tk_acts") || "[]"); S.userWell = JSON.parse(localStorage.getItem("tk_well") || "[]"); } catch (e) {} }
+function loadLocal() { try { S.ovr = JSON.parse(localStorage.getItem("tk_ovr") || "{}") || {}; const p = JSON.parse(localStorage.getItem("tk_profile") || "null"); if (p) S.profile = { ...DEFAULT_PROFILE, ...p }; S.userActs = JSON.parse(localStorage.getItem("tk_acts") || "[]"); S.userWell = JSON.parse(localStorage.getItem("tk_well") || "[]"); } catch (e) {} }
 async function initDB() {
   if (!window.claude?.use) return;
   const db = await window.claude.use("db").catch(() => null); if (!db) return;
   S.db = db; let got = { a: false, w: false };
   const timer = setTimeout(() => { if (!got.a) $("#importStatus").textContent = "Uložená data se zatím nepodařilo načíst. Zobrazuji, co je k dispozici."; }, 10000);
+  db.doc("overrides/activities").onSnapshot(s => { const d = s.exists ? s.data() : null; S.ovr = d && d.items && typeof d.items === "object" ? d.items : {}; applyData(); }, () => {});
   db.doc("coach/plan").onSnapshot(s => { const d = s.exists ? s.data() : null; S.aiPlan = d && Array.isArray(d.days) && d.mon ? d : null; if (S.m) { renderPlan(); renderTodayWorkout(); } }, () => {});
   db.doc("athlete/profile").onSnapshot(s => { if (s.exists) { S.profile = { ...DEFAULT_PROFILE, ...s.data() }; applyData(); } }, () => {});
   const sub = (c, key, setter) => db.collection(c).onSnapshot(snap => { const items = []; snap.docs.forEach(d => { const b = d.data(); if (Array.isArray(b?.items)) items.push(...b.items); }); setter(items); if (!snap.metadata.fromCache) { got[key] = true; if (got.a) { clearTimeout(timer); if (/nepodařilo/.test($("#importStatus").textContent)) $("#importStatus").textContent = ""; } } applyData(); }, () => { clearTimeout(timer); });
