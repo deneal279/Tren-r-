@@ -422,8 +422,13 @@ tr.need select.rpe{border-color:var(--warn);color:var(--warn)}
         <label for="pSwim"><span id="lSwim">Plavání</span><input id="pSwim" name="pSwim" placeholder="33:00" inputmode="numeric"></label>
         <label for="pBike"><span id="lBike">Kolo</span><input id="pBike" name="pBike" placeholder="1:30:00" inputmode="numeric"></label>
         <label for="pRun"><span id="lRun">Běh po kole</span><input id="pRun" name="pRun" placeholder="1:20:00" inputmode="numeric"></label>
+        <span class="note" style="align-self:center">Tvoje časy na závodních vzdálenostech</span>
+        <label for="prSwimKm">Nejdelší plavání (km)<input id="prSwimKm" name="prSwimKm" placeholder="4,6" inputmode="decimal"></label>
+        <label for="prRideKm">Nejdelší jízda (km)<input id="prRideKm" name="prRideKm" placeholder="70" inputmode="decimal"></label>
+        <label for="prRun10">Nejlepší 10 km čerstvý<input id="prRun10" name="prRun10" placeholder="1:14:00" inputmode="numeric"></label>
         <button class="btn primary" type="submit">Přepočítat</button>
       </form>
+      <p class="note" style="margin:-6px 0 12px">Osobní maxima zadej i ze starších hodinek nebo z jízd rozdělených do víc záznamů. Použije se vždy lepší hodnota z dat a z tvého zadání.</p>
       <div class="tbl-scroll"><table id="potTable"></table></div>
       <div class="pot-total" id="potTotal"></div>
       <h3 style="font-family:var(--font-display);font-size:18px;text-transform:uppercase;letter-spacing:.05em">Kde ušetříš nejvíc minut</h3>
@@ -612,7 +617,7 @@ const RACE = {
   "70.3":   { label: "Ironman 70.3",ctl: 80,  taper: 14, dist: [1.9, 90, 21.1], trans: 8, legs: [["Plavání","1,9 km"],["Kolo","90 km"],["Běh","21,1 km"]] },
   ironman:  { label: "Ironman",     ctl: 100, taper: 21, dist: [3.8, 180, 42.2], trans: 10, legs: [["Plavání","3,8 km"],["Kolo","180 km"],["Běh","42,2 km"]] }
 };
-const DEFAULT_PROFILE = { name: "Sportovec", pSwim: "", pBike: "", pRun: "", maxHr: 188, restHr: 46, lthr: 0, weight: 0, ftp: 250, runPace: "4:45", css: "1:45", weeklyHours: 10, strengthGoal: 2, raceType: "70.3", raceName: "Ironman 70.3", raceDate: addDays(TODAY, 68) };
+const DEFAULT_PROFILE = { name: "Sportovec", pSwim: "", pBike: "", pRun: "", prSwimKm: "", prRideKm: "", prRun10: "", maxHr: 188, restHr: 46, lthr: 0, weight: 0, ftp: 250, runPace: "4:45", css: "1:45", weeklyHours: 10, strengthGoal: 2, raceType: "70.3", raceName: "Ironman 70.3", raceDate: addDays(TODAY, 68) };
 
 const S = { profile: { ...DEFAULT_PROFILE }, userActs: [], userWell: [], acts: [], well: [], source: "demo", range: 90, m: null, actsShown: 12, db: null };
 S.aiPlan = null; S.planMode = "auto"; S.ovr = {};
@@ -1262,6 +1267,10 @@ function renderRecords() {
   if (bw) recs.push(`<div class="rec"><small>Nejobjemnější týden</small><b>${r1(bw[1]).toLocaleString("cs-CZ")} h</b><span>týden od ${fmtD(bw[0])}</span></div>`);
   const pk = days.reduce((b, d) => d.ctl > b.ctl ? d : b, days[0]);
   recs.push(`<div class="rec"><small>Nejvyšší kondice CTL</small><b>${r0(pk.ctl)}</b><span>${fmtD(pk.date)} · teď ${r0(S.m.last.ctl)}</span></div>`);
+  const P = S.profile, mS = num(P.prSwimKm), mR = num(P.prRideKm), m10 = parseT(P.prRun10);
+  if (mS > 0) recs.push(`<div class="rec"><small>Nejdelší plavání (osobní)</small><b>${cz(mS)} km</b><span>zadáno ručně</span></div>`);
+  if (mR > 0) recs.push(`<div class="rec"><small>Nejdelší jízda (osobní)</small><b>${r0(mR)} km</b><span>zadáno ručně</span></div>`);
+  if (m10) recs.push(`<div class="rec"><small>Nejlepší 10 km (osobní)</small><b>${fmtT(m10)}</b><span>zadáno ručně · ${secPace(m10 * 60 / 10)}/km</span></div>`);
   const vo = [...S.well].reverse().find(w => w.vo2max);
   if (vo) recs.push(`<div class="rec"><small>VO2max (Garmin)</small><b>${vo.vo2max}</b><span>naposledy změřeno ${fmtD(vo.date)}</span></div>`);
   $("#recs").innerHTML = recs.join("") || `<p class="note">Zatím málo dat.</p>`;
@@ -1551,7 +1560,8 @@ function abilityScores(until) {
   const P = S.profile, R = RACE[P.raceType] || RACE.olympic, X = racePotential(until), b = BENCH[P.raceType] || BENCH.olympic;
   const A = S.acts.filter(a => a.date <= until && diffDays(a.date, until) <= 120), sp = ["swim", "bike", "run"];
   return [0, 1, 2].map(i => {
-    const longest = Math.max(0, ...A.filter(a => a.sport === sp[i]).map(a => i === 1 ? Math.max(a.dist || 0, a.trainer ? a.dur / 60 * 25 : 0) : a.dist || 0));
+    const man = i === 0 ? num(P.prSwimKm) : i === 1 ? num(P.prRideKm) : (parseT(P.prRun10) ? 10 : 0);
+    const longest = Math.max(0, Number.isFinite(man) ? man : 0, ...A.filter(a => a.sport === sp[i]).map(a => i === 1 ? Math.max(a.dist || 0, a.trainer ? a.dur / 60 * 25 : 0) : a.dist || 0));
     const cur = X.cur[i], pace = cur ? Math.min(1, b[i] / cur) : 0.5, dist = Math.min(1, longest / R.dist[i]);
     return { score: r0(100 * (0.65 * pace + 0.35 * dist)), cur, bench: b[i], longest };
   });
@@ -1569,24 +1579,26 @@ function racePotential(until) {
   const runs = A.filter(a => a.sport === "run" && !a.trainer && a.dist >= Math.min(4.5, dR * 0.4) && recent(a));
   const eq = a => a.dur * Math.pow(dR / a.dist, 1.06);
   const bestRun = runs.reduce((b, a) => !b || eq(a) < eq(b) ? a : b, null);
-  const freshRun = bestRun ? eq(bestRun) : null, dataRun = freshRun ? freshRun * 1.07 : null;
-  const own = [parseT(P.pSwim), parseT(P.pBike), parseT(P.pRun)], data = [dataSwim, dataBike, dataRun];
+  const man10 = parseT(P.prRun10), manFresh = man10 ? man10 * Math.pow(dR / 10, 1.06) : null;
+  const dataFresh = bestRun ? eq(bestRun) : null, freshRun = [dataFresh, manFresh].filter(Boolean).reduce((a, b) => Math.min(a, b), Infinity), dataRun = dataFresh ? dataFresh * 1.07 : null;
+  if (!Number.isFinite(freshRun)) { /* no run data */ }
+  const own = [parseT(P.pSwim), parseT(P.pBike), parseT(P.pRun) || (Number.isFinite(freshRun) && !dataRun ? freshRun * 1.07 : null)], data = [dataSwim, dataBike, dataRun];
   const cur = own.map((v, i) => v || data[i]);
   const wks = P.raceDate ? Math.max(0, diffDays(TODAY, P.raceDate) / 7) : 20, f = clamp(wks / 36, 0.15, 1);
   const IMP = [[.04, .08], [.07, .14], [.08, .15]];
-  const fade = own[2] && freshRun ? own[2] / freshRun - 1 : null;
+  const fade = parseT(P.pRun) && Number.isFinite(freshRun) ? parseT(P.pRun) / freshRun - 1 : null;
   const pot = cur.map((v, i) => v == null ? null : [v * (1 - IMP[i][1] * f), v * (1 - IMP[i][0] * f)]);
   if (pot[2] && fade != null && fade > .08) { const tgt = freshRun * (1 - IMP[2][0] * f) * 1.05; pot[2] = [Math.min(pot[2][0], tgt * 0.97), Math.min(pot[2][1], tgt)]; }
   const trans = [R.trans, R.trans * 0.7];
-  return { R, dist: R.dist, own, data, cur, pot, trans, fade, freshRun, bestSwim, bestRide, bestRun, wks, ok: cur.every(v => v != null) };
+  return { R, dist: R.dist, own, data, cur, pot, trans, fade, freshRun: Number.isFinite(freshRun) ? freshRun : null, manFresh, bestSwim, bestRide, bestRun, wks, ok: cur.every(v => v != null) };
 }
 function renderPotential() {
   const P = S.profile, X = racePotential(), R = X.R, names = ["Plavání", "Kolo", "Běh po kole"], sp = ["swim", "bike", "run"];
   $("#potRace").textContent = `${R.label}: ${X.dist[0].toLocaleString("cs-CZ")} km + ${X.dist[1]} km + ${X.dist[2].toLocaleString("cs-CZ")} km`;
   $("#lSwim").textContent = `Plavání ${X.dist[0].toLocaleString("cs-CZ")} km`; $("#lBike").textContent = `Kolo ${X.dist[1]} km`; $("#lRun").textContent = `Běh ${X.dist[2].toLocaleString("cs-CZ")} km po kole`;
-  const f = $("#potForm"); if (!f.dataset.dirty) { f.elements.pSwim.value = P.pSwim || ""; f.elements.pBike.value = P.pBike || ""; f.elements.pRun.value = P.pRun || ""; }
+  const f = $("#potForm"); if (!f.dataset.dirty) { f.elements.pSwim.value = P.pSwim || ""; f.elements.pBike.value = P.pBike || ""; f.elements.pRun.value = P.pRun || ""; f.elements.prSwimKm.value = P.prSwimKm || ""; f.elements.prRideKm.value = P.prRideKm || ""; f.elements.prRun10.value = P.prRun10 || ""; }
   const pace = (i, t) => i === 0 ? `${secPace(t * 60 / (X.dist[0] * 10))}/100 m` : i === 1 ? `${cz(X.dist[1] / (t / 60))} km/h` : `${secPace(t * 60 / X.dist[2])}/km`;
-  const src = i => i === 0 && X.bestSwim ? `${esc(X.bestSwim.name)} ${fmtD(X.bestSwim.date)}: ${r0(X.bestSwim.dist * 1000)} m za ${fmtT(X.bestSwim.dur)}` : i === 1 && X.bestRide ? `${fmtD(X.bestRide.date)}: ${cz(X.bestRide.dist)} km za ${fmtT(X.bestRide.dur)} (${cz(X.bestRide.dist / (X.bestRide.dur / 60))} km/h), v závodě +6 %` : i === 2 && X.bestRun ? `${fmtD(X.bestRun.date)}: ${cz(X.bestRun.dist)} km za ${fmtT(X.bestRun.dur)} → ${X.dist[2]} km čerstvý ${fmtT(X.freshRun)}, po kole +7 %` : "venkovní data chybí";
+  const src = i => i === 0 && X.bestSwim ? `${esc(X.bestSwim.name)} ${fmtD(X.bestSwim.date)}: ${r0(X.bestSwim.dist * 1000)} m za ${fmtT(X.bestSwim.dur)}` : i === 1 && X.bestRide ? `${fmtD(X.bestRide.date)}: ${cz(X.bestRide.dist)} km za ${fmtT(X.bestRide.dur)} (${cz(X.bestRide.dist / (X.bestRide.dur / 60))} km/h), v závodě +6 %` : i === 2 && (X.bestRun || X.manFresh) ? `${X.manFresh && X.freshRun === X.manFresh ? `tvůj osobák 10 km ${esc(S.profile.prRun10)}` : `${fmtD(X.bestRun.date)}: ${cz(X.bestRun.dist)} km za ${fmtT(X.bestRun.dur)}`} → ${X.dist[2]} km čerstvý ${fmtT(X.freshRun)}${X.fade != null ? `, po kole jsi o ${r0(X.fade * 100)} % pomalejší` : ", po kole +7 %"}` : "venkovní data chybí";
   const hrT = [ZS.hr(2), ZS.hr(2), `${ZN.hr[2][0]}–${ZN.hr[3][1]} tepů`];
   $("#potTable").innerHTML = `<thead><tr><th>Disciplína</th><th class="n">Tvůj čas</th><th class="n" data-tip="potData">Z dat Garmin</th><th class="n" data-tip="potential">Potenciál na závod</th><th>Závodní tempo (cíl)</th><th>Z čeho to počítám</th></tr></thead><tbody>` +
     [0, 1, 2].map(i => { const p = X.pot[i], mid = p ? (p[0] + p[1]) / 2 : null; return `<tr><td><span class="sport"><i class="b-${sp[i]}"></i>${names[i]}</span></td><td class="n">${X.own[i] ? fmtT(X.own[i]) : "–"}</td><td class="n">${X.data[i] ? fmtT(X.data[i]) : "–"}</td><td class="n"><b>${p ? `${fmtT(p[0])}–${fmtT(p[1])}` : "–"}</b></td><td>${mid ? `${pace(i, mid)} · ${hrT[i]}` : "–"}</td><td class="name note">${src(i)}</td></tr>`; }).join("") +
@@ -1715,7 +1727,7 @@ function initUI() {
   $("#planSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (!b || b.disabled) return; S.planMode = b.dataset.m; try { localStorage.setItem("tk_planMode", S.planMode); } catch (err) {} renderPlan(); renderTodayWorkout(); });
   $("#aiPlanBtn").addEventListener("click", makeAiPlan);
   $("#potForm").addEventListener("input", () => { $("#potForm").dataset.dirty = "1"; });
-  $("#potForm").addEventListener("submit", async e => { e.preventDefault(); const f = e.target; S.profile = { ...S.profile, pSwim: f.elements.pSwim.value.trim(), pBike: f.elements.pBike.value.trim(), pRun: f.elements.pRun.value.trim() }; delete f.dataset.dirty; render();
+  $("#potForm").addEventListener("submit", async e => { e.preventDefault(); const f = e.target; S.profile = { ...S.profile, pSwim: f.elements.pSwim.value.trim(), pBike: f.elements.pBike.value.trim(), pRun: f.elements.pRun.value.trim(), prSwimKm: f.elements.prSwimKm.value.trim(), prRideKm: f.elements.prRideKm.value.trim(), prRun10: f.elements.prRun10.value.trim() }; delete f.dataset.dirty; render();
     if (S.db) { try { await S.db.doc("athlete/profile").set(S.profile); } catch (err) {} } else { try { localStorage.setItem("tk_profile", JSON.stringify(S.profile)); } catch (err) {} } });
   $("#potAsk").addEventListener("click", () => { document.getElementById("trener").scrollIntoView({ behavior: "smooth", block: "start" }); ask("Rozeber můj závodní potenciál na můj cílový závod: odhad času z dat a mých časů, kde mám největší rezervy a konkrétní plán, jak se do dne závodu zlepšit v každé disciplíně. Zohledni, že na trenažéru nemám funkční wattmetr a tep tam je nízký."); });
   $("#woAsk").addEventListener("click", () => { const day = S.plan?.days.find(d => d.date === TODAY), t = day?.items.map(i => i.title).join(" + ") || "volno"; document.getElementById("trener").scrollIntoView({ behavior: "smooth", block: "start" }); ask(`Dnes mám v plánu: ${t}. Uprav mi to podle mé aktuální připravenosti, napiš přesnou strukturu s mými zónami a co jíst před a po.`); });
