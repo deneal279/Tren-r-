@@ -745,9 +745,7 @@ function radarScores(days, offset) {
   const active = win.filter(d => d.n > 0).length;
   const weeksHit = [0,1,2,3].filter(k => win.slice(k * 7, k * 7 + 7).reduce((a, d) => a + d.mins, 0) / 60 >= P.weeklyHours * 0.75).length;
   return [
-    ["Plavání", clamp(100 * last.sctl.swim / (target * share.swim), 0, 100)],
-    ["Kolo", clamp(100 * last.sctl.bike / (target * share.bike), 0, 100)],
-    ["Běh", clamp(100 * last.sctl.run / (target * share.run), 0, 100)],
+    ...(() => { const ab = abilityScores(offset ? addDays(TODAY, -offset) : TODAY); return [["Plavání", ab[0].score], ["Kolo", ab[1].score], ["Běh", ab[2].score]]; })(),
     ["Síla", clamp(100 * strWeek / Math.max(1, P.strengthGoal), 0, 100)],
     ["Aerobní báze", clamp(100 * (lowMin / 60) / (0.8 * P.weeklyHours * 4), 0, 100)],
     ["Intenzita", clamp(100 * (highMin / 4) / 75, 0, 100)],
@@ -792,7 +790,10 @@ function insights(m) {
     else if (m.polar.low >= 0.75 && m.polar.high < 0.05) add("info", "Chybí intenzivní trénink", `${r0(m.polar.low * 100)} % času v Z1–2, jen ${r0(m.polar.high * 100)} % v Z4–5. Základ je dobrý, ale pro rychlost přidej 1 intervalový trénink týdně (cíl 10–20 % v Z4–5).`, "Zóny", "Skoro netrénuji v Z4–5. Jaký intervalový trénink mám přidat?");
     else if (m.polar.low >= 0.75) add("good", "Polarizovaná intenzita", `${r0(m.polar.low * 100)} % v Z1–2, ${r0(m.polar.high * 100)} % v Z4–5. Tak trénují elitní vytrvalci.`, "Zóny");
   }
-  const rd = m.radar; if (rd) { const tri = rd.slice(0, 3).sort((a, b) => a[1] - b[1])[0]; if (tri[1] < 70) add("info", `Slabina: ${tri[0].toLowerCase()}`, `Skóre ${tri[1]}/100 vůči cíli pro ${RACE[P.raceType].label}. Přidej 1 trénink týdně v této disciplíně.`, "Radar", `Moje nejslabší disciplína je ${tri[0].toLowerCase()}. Jak ji zlepšit?`); }
+  const rd = m.radar; if (rd) { const ab = abilityScores(TODAY), k = [0, 1, 2].sort((a, b) => ab[a].score - ab[b].score)[0], w = ab[k], nm = ["plavání", "kolo", "běh po kole"][k];
+    if (w.score < 90 && w.cur) add("info", `Největší rezerva: ${nm}`, `Výkonnost ${w.score}/100. Tvůj čas ${fmtT(w.cur)} proti ~${fmtT(w.bench)} typického amatéra na ${RACE[P.raceType].label}. Tady ušetříš nejvíc minut, víc v sekci Závodní potenciál.`, "Radar", `Moje největší rezerva je ${nm}. Jak ho do závodu nejvíc zrychlit?`);
+    const sw = S.acts.filter(a => a.sport === "swim" && diffDays(a.date, TODAY) < 28).length;
+    if (ab[0].score >= 85 && sw < 3 && S.source !== "demo") add("good", "Plavání ti jde", `Výkonnost ${ab[0].score}/100: závodní vzdálenost zvládáš s rezervou. Na udržení techniky a citu pro vodu stačí 1–2 plavání týdně.`, "Plavání"); }
   const str = rd?.[3]?.[1]; if (str != null && str < 75) add("warn", "Málo posilovny", `Posilovna ${r1(str / 100 * P.strengthGoal).toLocaleString("cs-CZ")}× týdně, cíl ${P.strengthGoal}×. Síla chrání před zraněním a zlepšuje ekonomiku běhu.`, "Síla", "Navrhni mi silový trénink pro triatlonistu 2× týdně.");
   else if (str != null) add("good", "Posilovna pravidelně", `Plníš cíl ${P.strengthGoal}× týdně. V posledních 3 týdnech před závodem sniž na 1× údržbu.`, "Síla");
   if (m.monotony > 2) add("warn", "Monotónní trénink", `Monotonie ${m.monotony.toFixed(1)} (nad 2,0 roste riziko přetrénování). Střídej těžké a lehké dny výrazněji.`, "Monotonie");
@@ -982,7 +983,7 @@ function drawRadar() {
   s += now.map((d, i) => { const p = pt(i, Math.max(2, d[1])); return `<circle class="r-dot" cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3.2"/>`; }).join("");
   s += now.map((d, i) => { const p = pt(i, 118), a = -Math.PI / 2 + i * 2 * Math.PI / N, c = Math.cos(a), anc = Math.abs(c) < 0.3 ? "middle" : c > 0 ? "start" : "end"; const dy = Math.sin(a) > 0.7 ? 10 : Math.sin(a) < -0.7 ? -6 : 0; return `<text class="r-lab" data-tip="${TK(d[0])}" x="${p[0].toFixed(1)}" y="${(p[1] + dy).toFixed(1)}" text-anchor="${anc}">${d[0]}</text><text class="r-val" x="${p[0].toFixed(1)}" y="${(p[1] + dy + 13).toFixed(1)}" text-anchor="${anc}">${d[1]}</text>`; }).join("");
   el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="max-width:100%;height:auto;margin:0 auto" role="img" aria-label="Radar schopností">${s}</svg>`;
-  $("#rlist").innerHTML = now.map((d, i) => { const dv = prev ? d[1] - prev[i][1] : 0; return `<div><span data-tip="${TK(d[0])}">${d[0]}</span><b>${d[1]}</b><em class="${dv > 1 ? "up" : dv < -1 ? "down" : "flat"}">${dv > 0 ? "+" : ""}${dv}</em></div>`; }).join("") + `<div class="note" style="display:block;margin-top:4px">Plavání, kolo a běh jsou kondice disciplíny proti cíli pro ${RACE[S.profile.raceType].label}.</div>`;
+  $("#rlist").innerHTML = now.map((d, i) => { const dv = prev ? d[1] - prev[i][1] : 0; return `<div><span data-tip="${TK(d[0])}">${d[0]}</span><b>${d[1]}</b><em class="${dv > 1 ? "up" : dv < -1 ? "down" : "flat"}">${dv > 0 ? "+" : ""}${dv}</em></div>`; }).join("") + `<div class="note" style="display:block;margin-top:4px">Plavání, kolo a běh = výkonnost na ${RACE[S.profile.raceType].label}: tvůj čas proti typickému amatérovi (65 %) a zvládnutí závodní vzdálenosti (35 %).</div>`;
 }
 
 function renderHeat(m) {
@@ -1545,9 +1546,20 @@ function initProfile() {
 function parseT(s) { s = String(s || "").trim().replace(",", "."); if (!s) return null; const p = s.split(":").map(Number); if (p.some(x => !Number.isFinite(x))) return null;
   if (p.length === 3) return p[0] * 60 + p[1] + p[2] / 60; if (p.length === 2) return p[0] <= 5 ? p[0] * 60 + p[1] : p[0] + p[1] / 60; return p[0]; }
 function fmtT(min) { const s = Math.round(min * 60), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return h ? `${h}:${pad(m)}:${pad(x)}` : `${m}:${pad(x)}`; }
-function racePotential() {
-  const P = S.profile, R = RACE[P.raceType] || RACE.olympic, [dS, dB, dR] = R.dist, A = S.acts;
-  const recent = a => diffDays(a.date, TODAY) <= 180;
+const BENCH = { sprint: [17, 40, 27], olympic: [32, 80, 55], "70.3": [42, 190, 130], ironman: [85, 390, 285] };
+function abilityScores(until) {
+  const P = S.profile, R = RACE[P.raceType] || RACE.olympic, X = racePotential(until), b = BENCH[P.raceType] || BENCH.olympic;
+  const A = S.acts.filter(a => a.date <= until && diffDays(a.date, until) <= 120), sp = ["swim", "bike", "run"];
+  return [0, 1, 2].map(i => {
+    const longest = Math.max(0, ...A.filter(a => a.sport === sp[i]).map(a => i === 1 ? Math.max(a.dist || 0, a.trainer ? a.dur / 60 * 25 : 0) : a.dist || 0));
+    const cur = X.cur[i], pace = cur ? Math.min(1, b[i] / cur) : 0.5, dist = Math.min(1, longest / R.dist[i]);
+    return { score: r0(100 * (0.65 * pace + 0.35 * dist)), cur, bench: b[i], longest };
+  });
+}
+function racePotential(until) {
+  until = until || TODAY;
+  const P = S.profile, R = RACE[P.raceType] || RACE.olympic, [dS, dB, dR] = R.dist, A = S.acts.filter(a => a.date <= until);
+  const recent = a => diffDays(a.date, until) <= 180;
   const swims = A.filter(a => a.sport === "swim" && a.dist >= Math.min(0.75, dS * 0.6) && recent(a));
   const bestSwim = swims.reduce((b, a) => !b || a.dur / a.dist < b.dur / b.dist ? a : b, null);
   const dataSwim = bestSwim ? bestSwim.dur / bestSwim.dist * dS * 1.04 : null;
@@ -1633,9 +1645,9 @@ const GLOSS = {
   z4: { t: "Z4 Práh", d: "Kolem anaerobního prahu, udržíš to cca 20–60 min. Intervaly zvyšují prahovou rychlost.", dir: "mid" },
   z5: { t: "Z5 VO2max", d: "Velmi těžce, jen krátké intervaly 2–5 min. Zvyšuje maximální aerobní výkon.", dir: "mid" },
   radar: { t: "Radar schopností", d: "8 oblastí na škále 0–100. Plná plocha = posledních 28 dní, čárkovaně = předchozích 28 dní. Číslo vpravo je změna.", dir: "up", dirText: "Větší a vyrovnanější plocha = lepší připravenost. Najeď na jednotlivé osy." },
-  rSwim: { t: "Plavání (radar)", d: "Kondice v plavání (CTL jen z plavání) vůči tomu, co je potřeba na tvůj typ závodu (asi 20 % celkové zátěže).", dir: "up", r: "100 = kondice odpovídá cíli" },
-  rBike: { t: "Kolo (radar)", d: "Kondice na kole (CTL jen z kola) vůči cíli pro tvůj závod (asi 45 % celkové zátěže).", dir: "up", r: "100 = kondice odpovídá cíli" },
-  rRun: { t: "Běh (radar)", d: "Kondice v běhu (CTL jen z běhu) vůči cíli pro tvůj závod (asi 35 % celkové zátěže).", dir: "up", r: "100 = kondice odpovídá cíli" },
+  rSwim: { t: "Plavání (radar)", d: "Výkonnost v plavání na tvůj závod: 65 % tvůj čas proti typickému amatérovi (olympijský ~32 min), 35 % jestli zvládáš závodní vzdálenost (nejdelší plavání za 4 měsíce). Neměří, kolik plaveš.", dir: "up", r: "100 = čas na úrovni typického amatéra a vzdálenost s rezervou", now: () => { const a = abilityScores(TODAY)[0]; return a.cur ? [`${a.score}/100 · čas ${fmtT(a.cur)} vs ~${fmtT(a.bench)} · nejdelší ${cz(a.longest)} km`, a.score >= 85 ? "good" : "warn"] : null; } },
+  rBike: { t: "Kolo (radar)", d: "Výkonnost na kole na tvůj závod: 65 % tvůj čas proti typickému amatérovi (olympijský 40 km ~1:20), 35 % nejdelší jízda za 4 měsíce vůči závodní vzdálenosti.", dir: "up", r: "100 = čas na úrovni typického amatéra a vzdálenost s rezervou", now: () => { const a = abilityScores(TODAY)[1]; return a.cur ? [`${a.score}/100 · čas ${fmtT(a.cur)} vs ~${fmtT(a.bench)}`, a.score >= 85 ? "good" : "warn"] : null; } },
+  rRun: { t: "Běh (radar)", d: "Výkonnost v běhu po kole: 65 % tvůj čas proti typickému amatérovi (olympijský 10 km po kole ~55 min), 35 % nejdelší běh za 4 měsíce vůči závodní vzdálenosti.", dir: "up", r: "100 = čas na úrovni typického amatéra a vzdálenost s rezervou", now: () => { const a = abilityScores(TODAY)[2]; return a.cur ? [`${a.score}/100 · čas ${fmtT(a.cur)} vs ~${fmtT(a.bench)}`, a.score >= 85 ? "good" : "warn"] : null; } },
   rStr: { t: "Síla (radar)", d: "Kolikrát týdně chodíš do posilovny vůči cíli z profilu.", dir: "up", r: "100 = plníš cíl" },
   rBase: { t: "Aerobní báze (radar)", d: "Hodiny v Z1–2 za 28 dní vůči 80 % tvého týdenního cíle.", dir: "up" },
   rInt: { t: "Intenzita (radar)", d: "Minuty v Z4–5 týdně vůči doporučeným ~75 minutám.", dir: "up", dirText: "Vyšší = víc rychlostního tréninku. Nízké skóre = chybí intervaly." },
