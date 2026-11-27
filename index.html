@@ -271,6 +271,19 @@ select.rpe{min-width:132px} input.watt{width:76px;font-family:var(--font-mono)}
 tr.need select.rpe{border-color:var(--warn);color:var(--warn)}
 .src{display:inline-block;font-family:var(--font-body);font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:1px 5px;border-radius:4px;margin-left:4px;background:var(--surface-2);color:var(--muted);text-decoration:none}
 .src-w,.src-rpe{color:var(--good)} .src-odhad{color:var(--warn)}
+/* Body composition */
+.body-grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:18px;margin-top:14px}
+@media (max-width:900px){.body-grid{grid-template-columns:minmax(0,1fr)}}
+.bh{font-family:var(--font-display);font-size:16px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 8px}
+.bars{display:grid;gap:7px}
+.brow{display:grid;grid-template-columns:132px minmax(0,1fr) 96px;gap:10px;align-items:center;font-size:12.5px}
+.brow small{display:block;font-family:var(--font-body);font-size:10.5px;font-weight:400}
+@media (max-width:560px){.brow{grid-template-columns:104px minmax(0,1fr) 84px}}
+.rbar{position:relative;height:8px;border-radius:4px;background:var(--surface-2);border:1px solid var(--line)}
+.rbar .band{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--good) 30%,transparent);border-radius:3px}
+.rbar .mark{position:absolute;top:-4px;width:4px;height:14px;margin-left:-2px;border-radius:2px;background:var(--good)}
+.rbar .mark.warn{background:var(--warn)} .rbar .mark.bad{background:var(--bad)}
+.brow b{text-align:right;font-weight:500}
 /* Race potential */
 .pot-in{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:end;margin-bottom:14px}
 @media (max-width:700px){.pot-in{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -361,6 +374,7 @@ tr.need select.rpe{border-color:var(--warn);color:var(--warn)}
       <a href="#profil">Radar</a>
       <a href="#vykon">Výkon</a>
       <a href="#regenerace">Regenerace</a>
+      <a href="#telo">Tělo</a>
       <a href="#trener">Trenér</a>
       <a href="#data">Data</a>
     </nav>
@@ -522,6 +536,28 @@ tr.need select.rpe{border-color:var(--warn);color:var(--warn)}
       <div class="cmp" id="factorsCmp"></div>
     </section>
 
+    <div class="section-title" id="telo"><h2>Složení těla</h2><span class="note" id="bodyDate"></span></div>
+    <section class="card c12">
+      <div class="card-head"><div><h2 data-tip="body">Složení těla</h2><div class="sub">Z chytré váhy (InBody a podobné). Tuk, svaly, viscerální tuk a cílová hmotnost pro triatlon.</div></div><button class="btn" id="bodyAsk" type="button">Rozebrat s trenérem</button></div>
+      <div id="bodyCard"></div>
+      <details style="margin-top:14px"><summary class="btn" style="display:inline-block">Přidat nové měření</summary>
+        <form class="form" id="bodyForm" style="margin-top:12px">
+          <label for="b_date">Datum<input id="b_date" name="date" type="date" required></label>
+          <label for="b_weight">Hmotnost (kg)<input id="b_weight" name="weight" inputmode="decimal" required></label>
+          <label for="b_fatPct">Tělesný tuk (%)<input id="b_fatPct" name="fatPct" inputmode="decimal"></label>
+          <label for="b_ffm">Aktivní hmota (kg)<input id="b_ffm" name="ffm" inputmode="decimal"></label>
+          <label for="b_skmPct">Kosterní svalstvo (%)<input id="b_skmPct" name="skmPct" inputmode="decimal"></label>
+          <label for="b_musclePct">Svaly (%)<input id="b_musclePct" name="musclePct" inputmode="decimal"></label>
+          <label for="b_waterPct">Voda (%)<input id="b_waterPct" name="waterPct" inputmode="decimal"></label>
+          <label for="b_visceral">Viscerální tuk<input id="b_visceral" name="visceral" inputmode="decimal"></label>
+          <label for="b_bmr">Bazální metabolismus (kcal)<input id="b_bmr" name="bmr" inputmode="numeric"></label>
+          <label style="justify-content:flex-end"><button class="btn primary" type="submit">Uložit měření</button></label>
+        </form>
+        <p class="note">Nebo mi pošli screenshot z váhy a zapíšu ho za tebe i se segmenty.</p>
+      </details>
+      <div class="status" id="bodyStatus"></div>
+    </section>
+
     <div class="section-title" id="treninky"><h2>Poslední tréninky</h2></div>
     <section class="card c12">
       <p class="note" id="actsHint" style="margin:0 0 10px"></p>
@@ -620,7 +656,7 @@ const RACE = {
 const DEFAULT_PROFILE = { name: "Sportovec", pSwim: "", pBike: "", pRun: "", prSwimKm: "", prRideKm: "", prRun10: "", maxHr: 188, restHr: 46, lthr: 0, weight: 0, ftp: 250, runPace: "4:45", css: "1:45", weeklyHours: 10, strengthGoal: 2, raceType: "70.3", raceName: "Ironman 70.3", raceDate: addDays(TODAY, 68) };
 
 const S = { profile: { ...DEFAULT_PROFILE }, userActs: [], userWell: [], acts: [], well: [], source: "demo", range: 90, m: null, actsShown: 12, db: null };
-S.aiPlan = null; S.planMode = "auto"; S.ovr = {};
+S.aiPlan = null; S.planMode = "auto"; S.ovr = {}; S.body = [];
 try { const r = localStorage.getItem("tk_range"); if (r) S.range = +r || 90; S.planMode = localStorage.getItem("tk_planMode") || "auto"; } catch (e) {}
 
 /* ---------------- Demo data ---------------- */
@@ -861,7 +897,7 @@ function render() {
   renderToday(m); renderRace(m); renderKPIs(m); renderInsights(m);
   renderPotential(); renderPlan(); renderTodayWorkout();
   drawPMC(); drawWeekly(); renderZones(m); drawRadar(); renderHeat(m); drawHRV(); drawRHR(); drawSleep(); renderActs();
-  renderZoneTable(); renderRecords(); drawEfficiency(); renderMonthly(); renderRecoveryFactors();
+  renderZoneTable(); renderRecords(); drawEfficiency(); renderMonthly(); renderRecoveryFactors(); renderBody();
   decorateTips();
   fillProfileForm();
 }
@@ -1233,17 +1269,59 @@ function renderTodayWorkout() {
   decorateTips();
 }
 function renderNutrition(items, acts) {
-  const P = S.profile, ww = [...S.well].reverse().find(w => w.weight)?.weight, kg = P.weight || ww || null;
-  const load = Math.max(items.reduce((a, i) => a + (i.tss || 0), 0), acts.reduce((a, x) => a + (x.tss || 0), 0));
+  const P = S.profile, B = bodyLatest(), T = B ? bodyTarget(B) : null, ww = [...S.well].reverse().find(w => w.weight)?.weight;
+  const kgNow = B?.weight || P.weight || ww || null, ref = T ? T.hi : (P.weight || ww || null);
   const mins = Math.max(items.reduce((a, i) => a + (i.sport === "other" ? 0 : i.mins || 0), 0), acts.reduce((a, x) => a + x.dur, 0));
   const endMin = Math.max(items.reduce((a, i) => a + (["swim", "bike", "run"].includes(i.sport) ? i.mins || 0 : 0), 0), acts.reduce((a, x) => a + (["swim", "bike", "run"].includes(x.sport) ? x.dur : 0), 0));
   const cls = endMin < 45 ? ["Lehký den", 3, 4] : endMin < 90 ? ["Střední zátěž", 4, 5] : endMin < 150 ? ["Náročný den", 5, 7] : ["Velmi náročný den", 6, 8];
-  $("#nutriSub").textContent = cls[0] + (kg ? ` · počítáno na ${r1(kg).toLocaleString("cs-CZ")} kg` : "");
-  if (!kg) { $("#nutri").innerHTML = `<p class="note">Doplň hmotnost v profilu (sekce Data a nastavení) a spočítám ti sacharidy, bílkoviny a pitný režim.</p>`; return; }
+  $("#nutriSub").textContent = cls[0] + (ref ? ` · sacharidy na ${r0(ref)} kg${T ? " (cílová hmotnost)" : ""}` : "");
+  if (!ref) { $("#nutri").innerHTML = `<p class="note">Doplň hmotnost v profilu nebo měření složení těla a spočítám ti sacharidy, bílkoviny a energii.</p>`; return; }
   const key = items.some(i => i.key);
-  $("#nutri").innerHTML = `<div class="big"><div><small>Sacharidy</small><b>${r0(kg * cls[1])}–${r0(kg * cls[2])} g</b></div><div><small>Bílkoviny</small><b>${r0(kg * 1.6)}–${r0(kg * 2)} g</b></div><div><small>Pití</small><b>${r1((kg * 0.035) + mins / 60 * 0.6).toLocaleString("cs-CZ")} l</b></div><div><small>Trénink</small><b>${mins ? fmtDur(mins) : "volno"}</b></div></div>
-  <ul>${key ? `<li>2–3 h před klíčovým tréninkem jídlo s ${r0(kg * 1)} g sacharidů, málo tuku a vlákniny.</li>` : ""}${mins >= 75 ? `<li>Během tréninku 40–60 g sacharidů za hodinu (gel, iontový nápoj, banán).</li>` : ""}${mins ? `<li>Do hodiny po tréninku: ${r0(kg * 0.3)} g bílkovin + ${r0(kg * 1)} g sacharidů.</li>` : `<li>Den volna: sacharidy spíš z celozrnných zdrojů, bílkoviny rozlož do 4 jídel.</li>`}<li>Bílkoviny rozděl do 4–5 jídel po 25–40 g.</li></ul>
-  <p class="note">${!P.weight && kg > 95 ? "Počítám s aktuální hmotností z Garminu. Pokud chceš hubnout, zadej v profilu cílovou hmotnost, doporučení pak budou přesnější. " : ""}Orientační hodnoty podle sportovní výživy, ne lékařská rada.</p>`;
+  const protLo = B?.ffm ? B.ffm * 1.8 : ref * 1.6, protHi = B?.ffm ? B.ffm * 2.2 : ref * 2;
+  const actKcal = acts.reduce((a, x) => a + (x.kcal || 0), 0), trainKcal = Math.max(actKcal, mins * (kgNow || ref) * 0.11);
+  const deficit = B && B.fatPct > 20 ? 300 : 0, kcal = B?.bmr ? B.bmr * 1.35 + trainKcal - deficit : null;
+  $("#nutri").innerHTML = `<div class="big">${kcal ? `<div><small data-tip="kcal">Energie</small><b>${(Math.round(kcal / 50) * 50).toLocaleString("cs-CZ")} kcal</b></div>` : ""}<div><small>Sacharidy</small><b>${r0(ref * cls[1])}–${r0(ref * cls[2])} g</b></div><div><small>Bílkoviny</small><b>${r0(protLo)}–${r0(protHi)} g</b></div><div><small>Pití</small><b>${cz(((kgNow || ref) * 0.035) + mins / 60 * 0.6)} l</b></div>${kcal ? "" : `<div><small>Trénink</small><b>${mins ? fmtDur(mins) : "volno"}</b></div>`}</div>
+  <ul>${kcal ? `<li>Energie = bazální metabolismus ${B.bmr} kcal × 1,35 + trénink ~${r0(trainKcal)} kcal${deficit ? ` − ${deficit} kcal na hubnutí (asi 0,3 kg tuku týdně)` : ""}.</li>` : ""}${key ? `<li>2–3 h před klíčovým tréninkem jídlo s ${r0(ref * 1)} g sacharidů, málo tuku a vlákniny.</li>` : ""}${mins >= 75 ? `<li>Během tréninku 40–60 g sacharidů za hodinu, deficit nedělej během tréninku.</li>` : ""}${mins ? `<li>Do hodiny po tréninku: 35–45 g bílkovin + ${r0(ref * 0.8)} g sacharidů.</li>` : `<li>Den volna: sacharidy spíš z celozrnných zdrojů, bílkoviny rozlož do 4 jídel.</li>`}<li>Bílkoviny rozděl do 4–5 jídel po 30–45 g${B?.ffm ? `, počítáno z aktivní hmoty ${cz(B.ffm)} kg` : ""}.</li></ul>
+  <p class="note">${T ? `Sacharidy počítám na cílovou hmotnost ${r0(T.lo)}–${r0(T.hi)} kg (20 % tuku) ze složení těla. ` : ""}Orientační hodnoty podle sportovní výživy, ne lékařská rada.</p>`;
+}
+
+/* ---------------- Body composition ---------------- */
+const BODY_FIELDS = [
+  ["weight", "Hmotnost", "kg", [64.7, 87.5]], ["fatPct", "Tělesný tuk", "%", [10, 20]], ["fatKg", "Tuk", "kg", [11.9, 23.9]], ["ffm", "Aktivní hmota (bez tuku)", "kg", [58.2, 71.2]],
+  ["musclePct", "Svaly", "%", [70.2, 86]], ["skmPct", "Kosterní svalstvo", "%", [40.7, 52.3]], ["waterPct", "Voda", "%", [54.1, 68.6]], ["proteinPct", "Bílkoviny", "%", [14, 18.3]],
+  ["mineralPct", "Minerály", "%", [3.3, 4.1]], ["visceral", "Viscerální tuk", "", [1, 9]], ["subcutKg", "Podkožní tuk", "kg", [10.3, 19.9]], ["bmi", "BMI", "", [18.5, 25]], ["bmr", "Bazální metabolismus", "kcal", [2343, 2781]], ["smi", "SMI", "", null]
+];
+const bodyLatest = () => S.body.length ? S.body[S.body.length - 1] : null;
+function bodyTarget(B) { if (!B?.ffm || !B.fatPct) return null; const lo = B.ffm / (1 - 0.18), hi = B.ffm / (1 - 0.20); return { lo, hi, lossLo: Math.max(0, B.weight - hi), lossHi: Math.max(0, B.weight - lo) }; }
+function renderBody() {
+  const B = bodyLatest(), el = $("#bodyCard");
+  if (!B) { el.innerHTML = `<p class="note">Zatím žádné měření. Přidej ho dole ve formuláři, nebo mi pošli screenshot z váhy a zapíšu ho.</p>`; $("#bodyDate").textContent = ""; return; }
+  const prev = S.body.length > 1 ? S.body[S.body.length - 2] : null, T = bodyTarget(B);
+  $("#bodyDate").textContent = `měření ${fmtD(B.date)}${B.source ? " · " + B.source : ""}${S.body.length > 1 ? ` · ${S.body.length} měření` : ""}`;
+  const tile = (k, lab, unit, good) => { const v = B[k]; if (v == null) return ""; const d = prev && prev[k] != null ? v - prev[k] : null; return `<div class="kpi"><div class="lab"><span data-tip="b_${k}">${lab}</span></div><div class="v">${cz(v)}${unit ? `<small>${unit}</small>` : ""}</div><div class="d">${d != null && Math.abs(d) >= 0.1 ? `<span class="${(d > 0) === good ? "up" : "down"}">${d > 0 ? "▲" : "▼"} ${cz(Math.abs(d))}</span> od minula` : statusOf(k, v)}</div></div>`; };
+  const statusOf = (k, v) => { const f = BODY_FIELDS.find(x => x[0] === k); if (!f?.[3]) return ""; const [a, b] = f[3]; return v < a ? `<span class="pill warn">pod normou</span>` : v > b ? `<span class="pill ${k === "ffm" || k === "smi" ? "good" : "warn"}">nad normou</span>` : `<span class="pill good">v normě</span>`; };
+  const bars = BODY_FIELDS.filter(f => f[3] && B[f[0]] != null).map(([k, lab, unit, [a, b]]) => {
+    const v = B[k], max = Math.max(b * 1.5, v * 1.08), pa = a / max * 100, pb = b / max * 100, pv = clamp(v / max * 100, 0, 100);
+    const st = v < a ? "warn" : v > b ? (k === "ffm" ? "good" : "warn") : "good";
+    return `<div class="brow"><span data-tip="b_${k}">${lab}</span><div class="rbar"><i class="band" style="left:${pa}%;width:${pb - pa}%"></i><i class="mark ${st}" style="left:${pv}%"></i></div><b class="num">${cz(v)} ${unit}<small class="note">norma ${cz(a)}–${cz(b)}</small></b></div>`; }).join("");
+  const sg = B.seg, segRow = (lab, k) => !sg ? "" : `<tr><td>${lab}</td><td class="n">${sg.fat?.[k] != null ? cz(sg.fat[k]) + " kg" : "–"}</td><td class="n">${sg.fatPct?.[k] != null ? `<span class="pill ${sg.fatPct[k] > 160 ? "warn" : "good"}">${r0(sg.fatPct[k])} %</span>` : "–"}</td><td class="n">${sg.muscle?.[k] != null ? cz(sg.muscle[k]) + " kg" : "–"}</td><td class="n">${sg.musclePct?.[k] != null ? `<span class="pill ${sg.musclePct[k] < 100 ? "warn" : "good"}">${r0(sg.musclePct[k])} %</span>` : "–"}</td></tr>`;
+  const legs = sg?.musclePct ? (sg.musclePct.ll + sg.musclePct.rl) / 2 : null, arms = sg?.musclePct ? (sg.musclePct.la + sg.musclePct.ra) / 2 : null;
+  const insights = [];
+  if (T && T.lossHi > 1) insights.push(["warn", "Cílová hmotnost pro triatlon", `Při zachování aktivní hmoty ${cz(B.ffm)} kg odpovídá 18–20 % tuku hmotnost <b>${r0(T.lo)}–${r0(T.hi)} kg</b>, tedy −${r0(T.lossLo)} až −${r0(T.lossHi)} kg tuku. ${S.profile.raceDate ? `Do závodu to je ${cz(T.lossLo / Math.max(1, diffDays(TODAY, S.profile.raceDate) / 7))}–${cz(T.lossHi / Math.max(1, diffDays(TODAY, S.profile.raceDate) / 7))} kg týdně, bezpečné tempo bez ztráty výkonu.` : ""} Běh po kole se tím zrychlí zhruba o ${r0(T.lossLo)}–${r0(T.lossHi)} %, tedy o ${r0(80 * T.lossLo / 100)}–${r0(80 * T.lossHi / 100)} min.`]);
+  if (B.visceral > 9) insights.push(["bad", "Viscerální tuk nad normou", `Index ${B.visceral} (norma 1–9). Tuk kolem orgánů nejrychleji ubírá aerobní trénink v Z2, dostatek spánku a mírný kalorický deficit. Tohle je zdravotně důležitější než BMI.`]);
+  if (B.ffm > 75) insights.push(["good", "Hodně aktivní hmoty", `Aktivní hmota ${cz(B.ffm)} kg je výrazně nad normou: máš hodně svalů a silnou kostru. BMI ${B.bmi ? cz(B.bmi) : ""} „obezita“ tě proto zkresluje, sleduj hlavně procento tuku.`]);
+  if (legs && arms && arms - legs > 15) insights.push(["info", "Nohy slabší než paže", `Svaly nohou ${r0(legs)} % normy, paže ${r0(arms)} %. Pro triatlon (kolo + běh) přesuň v posilovně důraz na nohy: dřep, rumunský mrtvý tah, výpady, výpony. Levá a pravá strana jsou vyrovnané.`]);
+  el.innerHTML = `<div class="kpis" style="grid-column:auto">${tile("weight", "Hmotnost", "kg", false)}${tile("fatPct", "Tělesný tuk", "%", false)}${tile("ffm", "Aktivní hmota", "kg", true)}${tile("visceral", "Viscerální tuk", "", false)}${tile("skmPct", "Kosterní svalstvo", "%", true)}${tile("waterPct", "Voda", "%", true)}${tile("bmr", "Bazální metabolismus", "kcal", true)}${tile("fatKg", "Tuk", "kg", false)}</div>
+  <div class="body-grid"><div><h3 class="bh">Proti normě</h3><div class="bars">${bars}</div></div>
+  <div><h3 class="bh">Segmenty (tuk a svaly, % normy)</h3>${sg ? `<div class="tbl-scroll"><table><thead><tr><th></th><th class="n">Tuk</th><th class="n">% normy</th><th class="n">Svaly</th><th class="n">% normy</th></tr></thead><tbody>${segRow("Levá paže", "la")}${segRow("Pravá paže", "ra")}${segRow("Trup", "tr")}${segRow("Levá noha", "ll")}${segRow("Pravá noha", "rl")}</tbody></table></div>` : `<p class="note">Segmentová data chybí.</p>`}
+  <div class="insights" style="grid-template-columns:minmax(0,1fr);margin-top:12px">${insights.map(([sev, t, d]) => `<div class="ins ${sev}"><div><h3>${t}</h3><p>${d}</p></div></div>`).join("")}</div></div></div>
+  ${S.body.length > 1 ? `<div class="chart" id="bodyTrend" style="margin-top:14px"></div>` : ""}`;
+  if (S.body.length > 1) lineChart($("#bodyTrend"), { data: S.body.map(b => ({ date: b.date, w: b.weight, f: b.fatKg ?? (b.weight * b.fatPct / 100) })), H: 200, label: "Vývoj hmotnosti a tuku", title: "Hmotnost a tuk (kg)", series: [{ key: "w", color: "accent", w: 2.4 }, { key: "f", color: "warn", w: 2 }], tip: d => `<div><span>Hmotnost</span><span>${cz(d.w)} kg</span></div><div><span>Tuk</span><span>${cz(d.f)} kg</span></div>` });
+}
+async function saveBody(m) {
+  S.body = [...S.body.filter(b => b.date !== m.date), m].sort((a, b) => a.date.localeCompare(b.date)); render();
+  if (S.db) { try { await S.db.collection("body").doc(m.date).set(m); $("#bodyStatus").textContent = "Měření uloženo."; } catch (e) { $("#bodyStatus").textContent = "Uložení selhalo, zkus to znovu."; } }
+  else { try { localStorage.setItem("tk_body", JSON.stringify(S.body)); } catch (e) {} $("#bodyStatus").textContent = "Měření uloženo v tomto prohlížeči."; }
 }
 
 /* ---------------- Performance ---------------- */
@@ -1339,6 +1417,7 @@ function coachContext() {
   if (ZN) lines.push(`TRÉNINKOVÉ ZÓNY: ${zonesText()}`);
   if (S.plan) lines.push(`PLÁN TOHOTO TÝDNE (${S.plan.source === "ai" ? "od trenéra" : "automatický"}, fáze ${PHASE[S.plan.ph]}${S.plan.recovery ? ", odlehčovací" : ""}): ` + S.plan.days.map(d => `${d.date}: ${d.items.map(i => `${i.title} ${i.mins} min`).join(" + ") || "volno"}`).join("; "));
   try { const X = racePotential(); if (X.ok) lines.push(`ZÁVODNÍ POTENCIÁL (${X.R.label}): moje časy plav/kolo/běh po kole ${X.own.map(v => v ? fmtT(v) : "?").join(" / ")}; z dat ${X.data.map(v => v ? fmtT(v) : "?").join(" / ")}; realistický cíl ${X.pot.map(p => fmtT(p[0]) + "–" + fmtT(p[1])).join(" / ")}${X.fade != null ? `; běh po kole o ${r0(X.fade * 100)} % pomalejší než čerstvý` : ""}.`); } catch (e) {}
+  { const B = bodyLatest(), T = B ? bodyTarget(B) : null; if (B) lines.push(`SLOŽENÍ TĚLA (${B.date}, ${B.source || "váha"}): hmotnost ${B.weight} kg, výška ${B.height || "?"} cm, tuk ${B.fatPct} % (${B.fatKg ?? "?"} kg), aktivní hmota ${B.ffm ?? "?"} kg, kosterní svalstvo ${B.skmPct ?? "?"} %, voda ${B.waterPct ?? "?"} %, viscerální tuk ${B.visceral ?? "?"} (norma 1–9), BMR ${B.bmr ?? "?"} kcal, BMI ${B.bmi ?? "?"}${B.seg?.musclePct ? `, svaly segmenty % normy: paže ${B.seg.musclePct.la}/${B.seg.musclePct.ra}, trup ${B.seg.musclePct.tr}, nohy ${B.seg.musclePct.ll}/${B.seg.musclePct.rl}` : ""}${T ? `; cílová hmotnost při 18–20 % tuku ${r0(T.lo)}–${r0(T.hi)} kg` : ""}.`); }
   lines.push(`POZNÁMKA K DATŮM: Zátěž tréninků = vlastní watty > vlastní RPE > RPE z Garminu > tep. Na trenažéru bez wattmetru je tep nízký a zátěž z tepu podhodnocená. Posilovna se počítá z RPE, ne z tepových zón.`);
   lines.push(`ZÓNY 28 DNÍ: Z1–2 ${r0(m.polar.low * 100)} %, Z3 ${r0(m.polar.mid * 100)} %, Z4–5 ${r0(m.polar.high * 100)} %.`);
   if (m.radar) lines.push(`RADAR 0–100 (teď / před 28 dny): ` + m.radar.map((d, i) => `${d[0]} ${d[1]}/${m.radarPrev?.[i]?.[1] ?? "?"}`).join(", "));
@@ -1610,7 +1689,7 @@ function renderPotential() {
   const tips = [
     ["swim", "Plavání", "2× týdně CSS série (8–12× 100 m) a 1× technika. Nacvič plavání v neoprenu a orientaci na bóje, ušetří i 1–2 min."],
     ["bike", "Kolo", "Největší rezerva: víc venkovních jízd, 1× týdně tempo v Z3 a dlouhá jízda. Nastavená pozice a rovnoměrné tempo bez nárazů nad práh."],
-    ["run", "Běh po kole", X.fade != null && X.fade > .08 ? `Po kole jsi o ${r0(X.fade * 100)} % pomalejší než čerstvý. Brick 1× týdně (15–30 min běhu hned po kole) to srazí na ~5 %. K tomu aerobní základ v Z2.` : "Brick 1× týdně, dlouhý běh v Z2 a 1× týdně intervaly. Každé kilo dolů zrychlí běh zhruba o 1 %."],
+    ["run", "Běh po kole", X.fade != null && X.fade > .08 ? `Po kole jsi o ${r0(X.fade * 100)} % pomalejší než čerstvý. Brick 1× týdně (15–30 min běhu hned po kole) to srazí na ~5 %. K tomu aerobní základ v Z2.` : `Brick 1× týdně, dlouhý běh v Z2 a 1× týdně intervaly. ${(() => { const B = bodyLatest(), T = B ? bodyTarget(B) : null; return T && T.lossLo > 1 ? `Úbytek ${r0(T.lossLo)}–${r0(T.lossHi)} kg tuku k cílové hmotnosti ${r0(T.lo)}–${r0(T.hi)} kg zrychlí běh o další ~${r0(T.lossLo)}–${r0(T.lossHi)} %.` : "Každé kilo tuku dolů zrychlí běh zhruba o 1 %."; })()}`],
     ["other", "Depo", "Nacvič T1 a T2 (neopren dolů, helma, gumičky v botách). Rozdíl 2–3 minuty bez jediného tréninku navíc."]
   ];
   const sav = [0, 1, 2].map(i => X.cur[i] - (X.pot[i][0] + X.pot[i][1]) / 2).concat([X.trans[0] - X.trans[1]]);
@@ -1682,6 +1761,21 @@ const GLOSS = {
   zonesTable: { t: "Tréninkové zóny", d: "Tvoje konkrétní hodnoty pro každou zónu podle profilu. Podle nich se řídí všechny tréninky v plánu.", dir: "mid" },
   factors: { t: "Co ovlivňuje regeneraci", d: "Porovnání ranní HRV a klidového tepu ve dnech po různých situacích, z tvých vlastních dat. Číslo v závorce = počet dní ve srovnání.", dir: "up", dirText: "Zelený rozdíl = skupina A ti pomáhá k lepší regeneraci." },
   records: { t: "Osobní maxima", d: "Nejlepší hodnoty za celé období v kokpitu.", dir: "up" },
+  body: { t: "Složení těla", d: "Měření bioimpedancí (chytrá váha, InBody). Absolutní čísla mají odchylku několik procent, nejcennější je trend při měření za stejných podmínek: ráno, nalačno, po toaletě, ve stejný den v týdnu.", dir: "mid" },
+  b_weight: { t: "Hmotnost", d: "Celková hmotnost. Pro triatlon je důležitější, z čeho se skládá, než samotné číslo.", dir: "mid", dirText: "Pokles z tuku = lepší. Pokles ze svalů = špatně." },
+  b_fatPct: { t: "Tělesný tuk (%)", d: "Podíl tuku na hmotnosti. Hlavní ukazatel pro výkon v běhu a do kopce.", dir: "down", r: "Triatlonisté amatéři muži 12–20 %, zdravé rozmezí 10–20 %." },
+  b_fatKg: { t: "Tuk (kg)", d: "Hmotnost tuku. Na tom, kolik kg tuku zhubneš, záleží víc než na celkové hmotnosti.", dir: "down" },
+  b_ffm: { t: "Aktivní hmota (bez tuku)", d: "Fat-free mass: svaly, kosti, orgány a voda. Z ní se počítá cílová hmotnost a bílkoviny.", dir: "up", dirText: "Vyšší = víc svalů a síly. Při hubnutí ji chceš udržet." },
+  b_visceral: { t: "Viscerální tuk", d: "Tuk uložený kolem vnitřních orgánů. Zdravotně nejrizikovější, ale při aerobním tréninku a mírném deficitu mizí nejrychleji.", dir: "down", r: "Norma 1–9." },
+  b_skmPct: { t: "Kosterní svalstvo", d: "Podíl svalů, které ovládáš (pohyb). Při vysokém tuku vychází procento nízko, i když svalů máš v kilogramech hodně.", dir: "up" },
+  b_musclePct: { t: "Svaly (%)", d: "Celková svalová hmota včetně hladkého svalstva jako podíl hmotnosti.", dir: "up" },
+  b_waterPct: { t: "Voda v těle", d: "Podíl vody. Ovlivňuje ho pitný režim a čas měření, proto měř vždy za stejných podmínek.", dir: "up", r: "Norma 54–69 %." },
+  b_proteinPct: { t: "Bílkoviny", d: "Podíl bílkovin v těle.", dir: "mid" },
+  b_mineralPct: { t: "Minerály", d: "Podíl minerálů (hlavně kosti).", dir: "mid" },
+  b_subcutKg: { t: "Podkožní tuk", d: "Tuk pod kůží, většina tělesného tuku.", dir: "down" },
+  b_bmi: { t: "BMI", d: "Hmotnost ÷ výška². U svalnatých sportovců zkresluje, protože nerozlišuje svaly a tuk. Sleduj spíš procento tuku.", dir: "mid" },
+  b_bmr: { t: "Bazální metabolismus", d: "Kolik energie tělo spálí v úplném klidu za den. Základ pro výpočet denního příjmu.", dir: "mid" },
+  kcal: { t: "Denní energie", d: "Bazální metabolismus × 1,35 (běžný den) + výdej tréninku. Při tuku nad 20 % minus 300 kcal na pozvolné hubnutí (~0,3 kg týdně) bez ztráty výkonu.", dir: "mid" },
   rpe: { t: "Náročnost (RPE 1–10)", d: "Jak těžký trénink subjektivně byl: 1 = velmi lehce, 5 = středně, 7 = těžce, 10 = maximum. Kde tep nefunguje (posilovna, trenažér, plavání), počítá se zátěž podle RPE. Hodnota z Garminu se použije sama, tvoje hodnocení má přednost.", dir: "mid", r: "Zátěž = délka × intenzita podle RPE. Hodina na RPE 7 ≈ 75 TSS, na RPE 4 ≈ 45 TSS." },
   wOwn: { t: "Výkon na kole (W)", d: "Průměrné watty z trenažéru nebo aplikace. Když je zadáš, zátěž se spočítá z výkonu vůči FTP v profilu, což je nejpřesnější.", dir: "mid", r: "Hlídej, aby FTP v profilu odpovídalo wattům, jinak vyjde zátěž přehnaná." },
   load: { t: "Zátěž (TSS) a její zdroj", d: "Štítek říká, z čeho je zátěž spočítaná: W = watty, RPE = tvoje hodnocení, RPE Garmin = hodnocení z hodinek, TEP = tepová frekvence, ODHAD = posilovna bez hodnocení (RPE 6).", dir: "mid", dirText: "Nejpřesnější je W, pak RPE. Tep na trenažéru a v posilovně zátěž podhodnocuje." },
@@ -1726,6 +1820,12 @@ function initUI() {
   $("#acts").addEventListener("change", e => { const t = e.target; if (!t.dataset.id) return; if (t.classList.contains("rpe")) setOverride(t.dataset.id, { rpe: Number(t.value) || 0 }); if (t.classList.contains("watt")) setOverride(t.dataset.id, { w: clamp(Number(t.value) || 0, 0, 800) }); });
   $("#planSeg").addEventListener("click", e => { const b = e.target.closest("button"); if (!b || b.disabled) return; S.planMode = b.dataset.m; try { localStorage.setItem("tk_planMode", S.planMode); } catch (err) {} renderPlan(); renderTodayWorkout(); });
   $("#aiPlanBtn").addEventListener("click", makeAiPlan);
+  $("#bodyForm").addEventListener("submit", e => { e.preventDefault(); const f = e.target, m = { date: f.elements.date.value, source: "zadáno ručně" };
+    for (const k of ["weight", "fatPct", "ffm", "skmPct", "musclePct", "waterPct", "visceral", "bmr"]) { const v = num(f.elements[k].value); if (Number.isFinite(v)) m[k] = v; }
+    if (!m.date || !m.weight) { $("#bodyStatus").textContent = "Vyplň aspoň datum a hmotnost."; return; }
+    if (m.fatPct && !m.ffm) m.ffm = r1(m.weight * (1 - m.fatPct / 100)); if (m.fatPct) m.fatKg = r1(m.weight * m.fatPct / 100);
+    saveBody(m); f.reset(); });
+  $("#bodyAsk").addEventListener("click", () => { document.getElementById("trener").scrollIntoView({ behavior: "smooth", block: "start" }); ask("Rozeber moje složení těla z chytré váhy ve vztahu k triatlonu: cílová hmotnost a % tuku, jak rychle hubnout bez ztráty výkonu, jídelníček na typický tréninkový den a co upravit v posilovně podle segmentové analýzy."); });
   $("#potForm").addEventListener("input", () => { $("#potForm").dataset.dirty = "1"; });
   $("#potForm").addEventListener("submit", async e => { e.preventDefault(); const f = e.target; S.profile = { ...S.profile, pSwim: f.elements.pSwim.value.trim(), pBike: f.elements.pBike.value.trim(), pRun: f.elements.pRun.value.trim(), prSwimKm: f.elements.prSwimKm.value.trim(), prRideKm: f.elements.prRideKm.value.trim(), prRun10: f.elements.prRun10.value.trim() }; delete f.dataset.dirty; render();
     if (S.db) { try { await S.db.doc("athlete/profile").set(S.profile); } catch (err) {} } else { try { localStorage.setItem("tk_profile", JSON.stringify(S.profile)); } catch (err) {} } });
@@ -1738,16 +1838,17 @@ function initUI() {
   dz.addEventListener("drop", e => { e.preventDefault(); dz.classList.remove("over"); const f = [...(e.dataTransfer?.files || [])]; if (f.length) handleFiles(f); });
   const nav = [...document.querySelectorAll(".nav a")];
   const io = "IntersectionObserver" in window ? new IntersectionObserver(es => { for (const en of es) if (en.isIntersecting) nav.forEach(a => a.classList.toggle("on", a.getAttribute("href") === "#" + en.target.id)); }, { rootMargin: "-40% 0px -55% 0px" }) : null;
-  if (io) ["dnes", "zavod", "plan", "zatez", "profil", "vykon", "regenerace", "data", "trener"].forEach(id => { const el = document.getElementById(id); if (el) io.observe(el); });
+  if (io) ["dnes", "zavod", "plan", "zatez", "profil", "vykon", "regenerace", "telo", "data", "trener"].forEach(id => { const el = document.getElementById(id); if (el) io.observe(el); });
   let rt; const ro = new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { if (S.m) { drawPMC(); drawWeekly(); drawRadar(); drawHRV(); drawRHR(); drawSleep(); drawEfficiency(); } }, 120); });
   ro.observe($("#dash"));
 }
-function loadLocal() { try { S.ovr = JSON.parse(localStorage.getItem("tk_ovr") || "{}") || {}; const p = JSON.parse(localStorage.getItem("tk_profile") || "null"); if (p) S.profile = { ...DEFAULT_PROFILE, ...p }; S.userActs = JSON.parse(localStorage.getItem("tk_acts") || "[]"); S.userWell = JSON.parse(localStorage.getItem("tk_well") || "[]"); } catch (e) {} }
+function loadLocal() { try { S.ovr = JSON.parse(localStorage.getItem("tk_ovr") || "{}") || {}; S.body = JSON.parse(localStorage.getItem("tk_body") || "[]") || []; const p = JSON.parse(localStorage.getItem("tk_profile") || "null"); if (p) S.profile = { ...DEFAULT_PROFILE, ...p }; S.userActs = JSON.parse(localStorage.getItem("tk_acts") || "[]"); S.userWell = JSON.parse(localStorage.getItem("tk_well") || "[]"); } catch (e) {} }
 async function initDB() {
   if (!window.claude?.use) return;
   const db = await window.claude.use("db").catch(() => null); if (!db) return;
   S.db = db; let got = { a: false, w: false };
   const timer = setTimeout(() => { if (!got.a) $("#importStatus").textContent = "Uložená data se zatím nepodařilo načíst. Zobrazuji, co je k dispozici."; }, 10000);
+  db.collection("body").onSnapshot(snap => { S.body = snap.docs.map(d => d.data()).filter(b => b && b.date && b.weight).sort((a, b) => a.date.localeCompare(b.date)); applyData(); }, () => {});
   db.doc("overrides/activities").onSnapshot(s => { const d = s.exists ? s.data() : null; S.ovr = d && d.items && typeof d.items === "object" ? d.items : {}; applyData(); }, () => {});
   db.doc("coach/plan").onSnapshot(s => { const d = s.exists ? s.data() : null; S.aiPlan = d && Array.isArray(d.days) && d.mon ? d : null; if (S.m) { renderPlan(); renderTodayWorkout(); } }, () => {});
   db.doc("athlete/profile").onSnapshot(s => { if (s.exists) { S.profile = { ...DEFAULT_PROFILE, ...s.data() }; applyData(); } }, () => {});
